@@ -1,0 +1,222 @@
+<!-- Section commentaires -->
+<section id="comments" class="mb-12">
+    <div class="flex items-baseline gap-4 mb-8">
+        <span class="text-mono text-sm text-smoke">→</span>
+        <h2 class="text-display text-3xl">Discussion <em class="text-display-italic text-amber-brand">({{ comments_count }})</em></h2>
+    </div>
+
+    {% if user.is_authenticated %}
+    <!-- Formulaire commentaire -->
+    <form method="POST" action="{% url 'interactions:post_comment' lesson.id %}" class="card mb-8">
+        {% csrf_token %}
+        <div class="flex items-start gap-4">
+            <div class="comment-avatar {% if user == lesson.chapter.course.instructor %}is-instructor{% endif %}">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name }}" class="w-full h-full object-cover">
+                {% else %}
+                    {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                {% endif %}
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-sm font-medium text-obsidian">{{ user.get_full_name }}</span>
+                    {% if user == lesson.chapter.course.instructor %}
+                        <span class="comment-instructor-badge">
+                            {% include 'partials/icons.html' with name='graduation-cap' class='w-3 h-3' %}
+                            Formateur
+                        </span>
+                    {% endif %}
+                </div>
+                <textarea name="content" rows="3" required placeholder="Partagez votre question, votre avis ou aidez un autre étudiant..." class="w-full px-4 py-3 bg-white border border-mist rounded-xl text-sm focus:outline-none focus:border-obsidian focus:ring-4 focus:ring-obsidian/5 transition-all resize-none"></textarea>
+                <div class="flex items-center justify-between mt-3">
+                    <p class="text-xs text-smoke">Soyez respectueux et constructif.</p>
+                    <button type="submit" class="btn-primary text-sm !py-2">
+                        {% include 'partials/icons.html' with name='arrow-right' class='w-3.5 h-3.5' %}
+                        Publier
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+    {% else %}
+    <div class="card text-center mb-8 bg-paper">
+        <p class="text-smoke mb-4">Connectez-vous pour participer à la discussion.</p>
+        <div class="flex gap-2 justify-center">
+            <a href="{% url 'accounts:login' %}" class="btn-ghost">Se connecter</a>
+            <a href="{% url 'accounts:register' %}" class="btn-primary">Créer un compte</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Liste des commentaires -->
+    {% if comments %}
+    <div class="card">
+        {% for comment in comments %}
+        <div class="comment-item" id="comment-{{ comment.id }}">
+            <div class="flex items-start gap-4">
+                <div class="comment-avatar {% if comment.is_instructor_reply %}is-instructor{% endif %}">
+                    {% if comment.author.avatar %}
+                        <img src="{{ comment.author.avatar.url }}" alt="{{ comment.author.get_full_name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        {{ comment.author.first_name|first|upper }}{{ comment.author.last_name|first|upper }}
+                    {% endif %}
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <!-- Header -->
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                        <span class="text-sm font-medium text-obsidian">{{ comment.author.get_full_name }}</span>
+                        {% if comment.is_instructor_reply %}
+                            <span class="comment-instructor-badge">
+                                {% include 'partials/icons.html' with name='graduation-cap' class='w-3 h-3' %}
+                                Formateur
+                            </span>
+                        {% endif %}
+                        {% if comment.is_pinned %}
+                            <span class="badge badge-amber text-[10px]">
+                                ★ Épinglé
+                            </span>
+                        {% endif %}
+                        <span class="text-xs text-smoke">·</span>
+                        <span class="text-xs text-smoke">{{ comment.created_at|timesince }}</span>
+                    </div>
+
+                    <!-- Contenu -->
+                    <div class="text-sm text-ink/90 leading-relaxed whitespace-pre-line mb-3">{{ comment.content }}</div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-1 flex-wrap">
+                        {% if user.is_authenticated %}
+                        <button onclick="toggleLike({{ comment.id }}, this)" class="comment-action {% if comment|is_liked_by:user %}liked{% endif %}" data-count="{{ comment.likes_count }}">
+                            {% include 'partials/icons.html' with name='star' class='w-3.5 h-3.5' %}
+                            <span class="like-count">{{ comment.likes_count }}</span>
+                            <span class="hidden md:inline">Utile</span>
+                        </button>
+
+                        <button onclick="showReplyForm({{ comment.id }})" class="comment-action">
+                            {% include 'partials/icons.html' with name='mail' class='w-3.5 h-3.5' %}
+                            Répondre
+                        </button>
+
+                        {% if comment.author == user %}
+                        <button onclick="deleteComment({{ comment.id }})" class="comment-action" style="color: var(--crimson);">
+                            {% include 'partials/icons.html' with name='x' class='w-3.5 h-3.5' %}
+                            Supprimer
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Formulaire de réponse (caché par défaut) -->
+                    {% if user.is_authenticated %}
+                    <form method="POST" action="{% url 'interactions:post_comment' lesson.id %}" class="hidden mt-4 pl-0" id="reply-form-{{ comment.id }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                        <textarea name="content" rows="2" required placeholder="Votre réponse..." class="w-full px-3 py-2 bg-white border border-mist rounded-lg text-sm focus:outline-none focus:border-obsidian resize-none"></textarea>
+                        <div class="flex gap-2 mt-2">
+                            <button type="submit" class="btn-primary text-xs !py-1.5 !px-3">Répondre</button>
+                            <button type="button" onclick="hideReplyForm({{ comment.id }})" class="btn-ghost text-xs !py-1.5 !px-3">Annuler</button>
+                        </div>
+                    </form>
+                    {% endif %}
+
+                    <!-- Réponses imbriquées -->
+                    {% if comment.replies.all %}
+                    <div class="comment-replies mt-4">
+                        {% for reply in comment.replies.all %}
+                        <div class="comment-item !border-b-0 !py-3" id="comment-{{ reply.id }}">
+                            <div class="flex items-start gap-3">
+                                <div class="comment-avatar {% if reply.is_instructor_reply %}is-instructor{% endif %}" style="width: 32px; height: 32px; font-size: 0.7rem;">
+                                    {% if reply.author.avatar %}
+                                        <img src="{{ reply.author.avatar.url }}" alt="{{ reply.author.get_full_name }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                        {{ reply.author.first_name|first|upper }}{{ reply.author.last_name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                                        <span class="text-sm font-medium text-obsidian">{{ reply.author.get_full_name }}</span>
+                                        {% if reply.is_instructor_reply %}
+                                            <span class="comment-instructor-badge">
+                                                {% include 'partials/icons.html' with name='graduation-cap' class='w-3 h-3' %}
+                                                Formateur
+                                            </span>
+                                        {% endif %}
+                                        <span class="text-xs text-smoke">· {{ reply.created_at|timesince }}</span>
+                                    </div>
+                                    <div class="text-sm text-ink/90 leading-relaxed whitespace-pre-line mb-2">{{ reply.content }}</div>
+                                    <div class="flex items-center gap-1">
+                                        {% if user.is_authenticated %}
+                                        <button onclick="toggleLike({{ reply.id }}, this)" class="comment-action {% if reply|is_liked_by:user %}liked{% endif %}">
+                                            {% include 'partials/icons.html' with name='star' class='w-3 h-3' %}
+                                            <span class="like-count">{{ reply.likes_count }}</span>
+                                        </button>
+                                        {% if reply.author == user %}
+                                        <button onclick="deleteComment({{ reply.id }})" class="comment-action" style="color: var(--crimson);">
+                                            {% include 'partials/icons.html' with name='x' class='w-3 h-3' %}
+                                        </button>
+                                        {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center py-10">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-mist text-fog mb-4">
+            {% include 'partials/icons.html' with name='mail' class='w-7 h-7' %}
+        </div>
+        <p class="text-smoke">Soyez le premier à commenter cette leçon !</p>
+    </div>
+    {% endif %}
+</section>
+
+<script>
+    function showReplyForm(commentId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        form.classList.remove('hidden');
+        form.querySelector('textarea').focus();
+    }
+    function hideReplyForm(commentId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        form.classList.add('hidden');
+    }
+
+    async function toggleLike(commentId, btn) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        try {
+            const res = await fetch(`/interactions/commentaires/like/${commentId}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
+            });
+            const data = await res.json();
+            if (data.success) {
+                btn.classList.toggle('liked', data.liked);
+                btn.querySelector('.like-count').textContent = data.count;
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function deleteComment(commentId) {
+        if (!confirm('Supprimer ce commentaire ?')) return;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        try {
+            const res = await fetch(`/interactions/commentaires/supprimer/${commentId}/`, {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`comment-${commentId}`).remove();
+            }
+        } catch (e) { console.error(e); }
+    }
+</script>

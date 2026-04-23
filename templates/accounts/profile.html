@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block content %}
+<section class="bg-mesh min-h-[calc(100vh-5rem)] pb-20">
+
+    <!-- Header profil -->
+    <div class="max-w-5xl mx-auto px-6 lg:px-10 pt-16 pb-12">
+        <div class="eyebrow mb-4">Espace personnel</div>
+
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+            <div class="flex items-center gap-6">
+                <div class="avatar avatar-lg">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name }}">
+                    {% else %}
+                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 class="text-display text-4xl md:text-5xl mb-2">{{ user.get_full_name }}</h1>
+                    <div class="flex items-center gap-3">
+                        <span class="badge {% if user.is_instructor %}badge-amber{% elif user.is_student %}badge-ocean{% else %}badge-ink{% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                        <span class="text-mono text-sm text-smoke">@{{ user.username }}</span>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'accounts:profile_edit' %}" class="btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Modifier
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenu -->
+    <div class="max-w-5xl mx-auto px-6 lg:px-10">
+        <div class="grid md:grid-cols-3 gap-6">
+
+            <!-- Infos personnelles -->
+            <div class="md:col-span-2 card">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-display text-2xl">Informations</h2>
+                    <span class="text-mono text-xs text-smoke">01</span>
+                </div>
+
+                <dl class="space-y-5">
+                    <div class="flex items-start justify-between pb-5 border-b border-mist">
+                        <dt class="form-label !mb-0">Email</dt>
+                        <dd class="text-ink text-right">{{ user.email }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between pb-5 border-b border-mist">
+                        <dt class="form-label !mb-0">Téléphone</dt>
+                        <dd class="text-ink text-right">{{ user.phone|default:"—" }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between pb-5 border-b border-mist">
+                        <dt class="form-label !mb-0">Date de naissance</dt>
+                        <dd class="text-ink text-right">{{ user.date_of_birth|default:"—" }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between">
+                        <dt class="form-label !mb-0">Membre depuis</dt>
+                        <dd class="text-ink text-right">{{ user.created_at|date:"F Y" }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Stats -->
+            <div class="space-y-6">
+                <div class="card bg-obsidian text-ivory" style="background: var(--obsidian);">
+                    <div class="eyebrow text-fog mb-3">Activité</div>
+                    <div class="text-display text-5xl text-ivory mb-1">0</div>
+                    <div class="text-fog text-sm">Cours {% if user.is_instructor %}publiés{% else %}suivis{% endif %}</div>
+                </div>
+
+                {% if user.is_instructor %}
+                <div class="card">
+                    <div class="eyebrow mb-3">Élèves</div>
+                    <div class="text-display text-5xl mb-1">0</div>
+                    <div class="text-smoke text-sm">Inscriptions totales</div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <div class="eyebrow mb-3">Certifications</div>
+                    <div class="text-display text-5xl mb-1">0</div>
+                    <div class="text-smoke text-sm">Obtenues à ce jour</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Bio full width -->
+            {% if user.bio %}
+            <div class="md:col-span-3 card">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-display text-2xl">À propos</h2>
+                    <span class="text-mono text-xs text-smoke">02</span>
+                </div>
+                <p class="text-ink/80 leading-relaxed whitespace-pre-line">{{ user.bio }}</p>
+            </div>
+            {% else %}
+            <div class="md:col-span-3 card text-center py-12 border-dashed">
+                <p class="text-smoke mb-4">Vous n'avez pas encore rédigé de biographie.</p>
+                <a href="{% url 'accounts:profile_edit' %}" class="btn-ghost">Ajouter une bio</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes cours{% endblock %}
+
+{% block content %}
+
+<!-- HEADER - Version robuste et responsive -->
+<section class="bg-mesh relative overflow-hidden">
+    <!-- Filigrane repositionné : tout en bas, derrière tout -->
+    <div class="absolute bottom-0 left-0 right-0 pointer-events-none select-none overflow-hidden" style="z-index: 0;">
+        <div class="text-display font-semibold whitespace-nowrap leading-none translate-y-1/3" style="font-size: clamp(8rem, 20vw, 18rem); color: rgba(10, 10, 11, 0.025);">
+            APPRENTISSAGE
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-10 py-16 md:py-20 relative" style="z-index: 1;">
+        <div class="grid lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+
+            <!-- Colonne gauche : intro -->
+            <div class="lg:col-span-7">
+                <div class="eyebrow mb-4 animate-fade-up">Espace personnel</div>
+                <h1 class="text-display text-4xl sm:text-5xl md:text-6xl leading-[0.95] mb-6 animate-fade-up delay-100">
+                    Mes cours.
+                </h1>
+                <p class="text-base md:text-lg text-ink/70 max-w-xl animate-fade-up delay-200 leading-relaxed mb-8">
+                    Reprenez exactement là où vous vous êtes arrêté. Votre progression est sauvegardée automatiquement.
+                </p>
+
+                <div class="animate-fade-up delay-300">
+                    <a href="{% url 'courses:course_list' %}" class="btn-primary">
+                        {% include 'partials/icons.html' with name='book' class='w-4 h-4' %}
+                        <span>Explorer le catalogue</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Colonne droite : Stats -->
+            <div class="lg:col-span-5 animate-fade-up delay-400">
+                <div class="grid grid-cols-3 gap-3 mb-3">
+                    <!-- Total -->
+                    <div class="p-4 md:p-5 rounded-2xl bg-obsidian text-ivory">
+                        <div class="text-display text-3xl md:text-4xl font-semibold leading-none mb-2" style="color: var(--ivory);">{{ total_count }}</div>
+                        <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-widest" style="color: rgba(250, 250, 247, 0.6);">Au total</div>
+                    </div>
+
+                    <!-- En cours -->
+                    <div class="p-4 md:p-5 rounded-2xl bg-white border border-mist">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style="background: var(--amber-brand);"></div>
+                            <div class="text-display text-3xl md:text-4xl font-semibold leading-none text-obsidian">{{ active_count }}</div>
+                        </div>
+                        <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-smoke">En cours</div>
+                    </div>
+
+                    <!-- Terminés -->
+                    <div class="p-4 md:p-5 rounded-2xl bg-white border border-mist">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style="background: var(--forest); color: white;">
+                                {% include 'partials/icons.html' with name='check' class='w-3 h-3' %}
+                            </div>
+                            <div class="text-display text-3xl md:text-4xl font-semibold leading-none text-obsidian">{{ completed_count }}</div>
+                        </div>
+                        <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-smoke">Terminés</div>
+                    </div>
+                </div>
+
+                <!-- Progression globale -->
+                {% if total_count > 0 %}
+                <div class="p-4 md:p-5 rounded-2xl bg-white border border-mist">
+                    <div class="flex items-center justify-between mb-3 gap-3">
+                        <div class="text-[9px] md:text-[10px] font-mono uppercase tracking-widest text-smoke">Taux d'achèvement</div>
+                        <div class="text-mono text-xs font-medium text-obsidian flex-shrink-0">
+                            {% widthratio completed_count total_count 100 %}%
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: {% widthratio completed_count total_count 100 %}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FILTRES & CONTENU -->
+<section class="py-12 bg-ivory">
+    <div class="max-w-7xl mx-auto px-6 lg:px-10">
+
+        <!-- Filtres -->
+       <div class="flex items-center justify-between mb-10 flex-wrap gap-4 pb-6 border-b border-mist">
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'enrollments:my_courses' %}" class="filter-chip {% if not current_status %}active{% endif %}">
+            Tous <span class="filter-chip-count">{{ total_count }}</span>
+        </a>
+        <a href="?status=ACTIVE" class="filter-chip {% if current_status == 'ACTIVE' %}active{% endif %}">
+            En cours <span class="filter-chip-count">{{ active_count }}</span>
+        </a>
+        <a href="?status=COMPLETED" class="filter-chip {% if current_status == 'COMPLETED' %}active{% endif %}">
+            Terminés <span class="filter-chip-count">{{ completed_count }}</span>
+        </a>
+    </div>
+    <div class="text-mono text-xs text-smoke">
+        {% if current_status == 'ACTIVE' %}Cours en cours d'apprentissage
+        {% elif current_status == 'COMPLETED' %}Cours que vous avez terminés
+        {% else %}Tous vos cours
+        {% endif %}
+    </div>
+</div>
+
+        {% if enrollments %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for enrollment in enrollments %}
+            <div class="enrollment-card {% if enrollment.is_completed %}completed{% endif %} animate-fade-up">
+                <!-- Thumbnail -->
+                <div class="relative aspect-video rounded-xl overflow-hidden mb-4 bg-paper">
+                    {% if enrollment.course.thumbnail %}
+                        <img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, {{ enrollment.course.category.color|default:'#0A0A0B' }}18, {{ enrollment.course.category.color|default:'#0A0A0B' }}05);">
+                            <div style="color: {{ enrollment.course.category.color|default:'#0A0A0B' }}; opacity: 0.5;">
+                                {% include 'partials/icons.html' with name=enrollment.course.category.icon class='w-12 h-12' %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if enrollment.is_completed %}
+                    <div class="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider" style="background: var(--forest); color: white;">
+                        {% include 'partials/icons.html' with name='check' class='w-3 h-3' %}
+                        Terminé
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Catégorie -->
+                {% if enrollment.course.category %}
+                <div class="flex items-center gap-2 mb-2">
+                    <span style="color: {{ enrollment.course.category.color }};">{% include 'partials/icons.html' with name=enrollment.course.category.icon class='w-3 h-3' %}</span>
+                    <span class="text-mono text-[10px] text-smoke uppercase tracking-wider">{{ enrollment.course.category.name }}</span>
+                </div>
+                {% endif %}
+
+                <!-- Titre -->
+                <h3 class="text-display text-lg leading-tight mb-3">
+                    {{ enrollment.course.title }}
+                </h3>
+
+                <!-- Formateur -->
+                <div class="flex items-center gap-2 mb-4 text-sm text-smoke">
+                    <div class="avatar" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                        {{ enrollment.course.instructor.first_name|first|upper }}{{ enrollment.course.instructor.last_name|first|upper }}
+                    </div>
+                    <span class="truncate">{{ enrollment.course.instructor.get_full_name }}</span>
+                </div>
+
+                <!-- Progression -->
+                <div class="mb-4">
+                    <div class="flex items-center justify-between text-xs mb-2">
+                        <span class="text-mono text-smoke">
+                            {{ enrollment.completed_lessons_count }}/{{ enrollment.total_lessons_count }} leçons
+                        </span>
+                        <span class="font-medium text-obsidian">{{ enrollment.progress_percentage }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: {{ enrollment.progress_percentage }}%;"></div>
+                    </div>
+                </div>
+
+                <!-- CTA -->
+               {% if enrollment.is_completed %}
+    {% if enrollment.certificate %}
+    <a href="{% url 'certificates:detail' enrollment.certificate.verification_uuid %}" class="btn-secondary w-full justify-center text-sm">
+        {% include 'partials/icons.html' with name='award' class='w-4 h-4' %}
+        Voir le certificat
+    </a>
+    {% else %}
+    <a href="{% url 'courses:course_detail' enrollment.course.slug %}" class="btn-secondary w-full justify-center text-sm">
+        {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+        Cours terminé
+    </a>
+    {% endif %}
+                {% else %}
+                    {% with next_lesson=enrollment.get_next_lesson %}
+                    {% if next_lesson %}
+                    <a href="{% url 'enrollments:lesson_detail' enrollment.course.slug next_lesson.id %}" class="btn-primary w-full justify-center text-sm">
+                        <span>
+                            {% if enrollment.progress_percentage > 0 %}Continuer{% else %}Commencer{% endif %}
+                        </span>
+                        {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                    </a>
+                    {% endif %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="mt-16 flex items-center justify-center gap-2">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}" class="btn-ghost">
+                    {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+                    Précédent
+                </a>
+            {% endif %}
+
+            <div class="flex items-center gap-1 mx-2">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="w-10 h-10 flex items-center justify-center bg-obsidian text-ivory rounded-full font-mono text-sm">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}" class="w-10 h-10 flex items-center justify-center rounded-full font-mono text-sm text-smoke hover:bg-mist hover:text-obsidian transition-colors">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}" class="btn-ghost">
+                    Suivant
+                    {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- État vide -->
+        <div class="text-center py-20">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-mist mb-6 text-fog">
+                {% include 'partials/icons.html' with name='graduation-cap' class='w-10 h-10' %}
+            </div>
+            <h3 class="text-display text-3xl mb-3">Votre bibliothèque est vide.</h3>
+            <p class="text-smoke mb-8 max-w-md mx-auto">Inscrivez-vous à votre premier cours pour démarrer votre parcours d'apprentissage.</p>
+            <a href="{% url 'courses:course_list' %}" class="btn-primary">
+                <span>Explorer les cours</span>
+                {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

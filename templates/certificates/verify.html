@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Vérification de certificat{% endblock %}
+
+{% block content %}
+<section class="bg-mesh py-16 min-h-screen">
+    <div class="max-w-4xl mx-auto px-6 lg:px-10">
+
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-obsidian text-ivory mb-4">
+                {% include 'partials/icons.html' with name='shield' class='w-8 h-8' %}
+            </div>
+            <div class="eyebrow mb-3">Vérification</div>
+            <h1 class="text-display text-5xl md:text-6xl mb-4">Certificat authentique ?</h1>
+            <p class="text-ink/70 max-w-xl mx-auto">Entrez un numéro de certificat pour vérifier son authenticité en temps réel.</p>
+        </div>
+
+        <!-- Formulaire de recherche -->
+        {% if not certificate %}
+        <div class="card max-w-xl mx-auto mb-8">
+            <form method="POST" action="{% url 'certificates:verify_search' %}">
+                {% csrf_token %}
+                <label class="form-label">Numéro de certificat</label>
+                <div class="flex gap-2">
+                    <input type="text" name="certificate_number" placeholder="KRS-2026-XXXXXXXX" value="{{ searched_number|default:'' }}" required class="flex-1 px-4 py-3 bg-white border border-mist rounded-xl font-mono text-sm focus:outline-none focus:border-obsidian focus:ring-4 focus:ring-obsidian/5 transition-all">
+                    <button type="submit" class="btn-primary">
+                        {% include 'partials/icons.html' with name='search' class='w-4 h-4' %}
+                        Vérifier
+                    </button>
+                </div>
+                <p class="form-hint mt-2">Format : KRS-ANNÉE-8CARACTÈRES</p>
+            </form>
+        </div>
+
+        {% if error %}
+        <div class="max-w-xl mx-auto card text-center" style="background: #FEF2F2; border-color: #FCA5A5;">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3" style="background: var(--crimson); color: white;">
+                {% include 'partials/icons.html' with name='x' class='w-6 h-6' %}
+            </div>
+            <h3 class="text-display text-xl mb-2" style="color: var(--crimson);">Certificat non trouvé</h3>
+            <p class="text-sm text-ink/70">{{ error }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Résultat : certificat trouvé -->
+        {% if certificate %}
+        <div class="card max-w-3xl mx-auto" style="background: linear-gradient(135deg, #F0FDF4 0%, white 100%); border: 2px solid #86EFAC;">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style="background: var(--forest); color: white;">
+                    {% include 'partials/icons.html' with name='check' class='w-8 h-8' %}
+                </div>
+                <div class="eyebrow mb-2" style="color: var(--forest);">Certificat authentique</div>
+                <h2 class="text-display text-3xl mb-2">Certificat vérifié avec succès.</h2>
+                <p class="text-sm text-ink/70">Ce certificat a été délivré officiellement par Kairos.</p>
+            </div>
+
+            <div class="border-t border-mist pt-6">
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <div class="eyebrow mb-2">Étudiant</div>
+                        <div class="text-display text-2xl">{{ certificate.student_name }}</div>
+                    </div>
+                    <div>
+                        <div class="eyebrow mb-2">Cours complété</div>
+                        <div class="text-display text-xl italic" style="color: var(--amber);">« {{ certificate.course_title }} »</div>
+                        <div class="text-sm text-smoke mt-1">par {{ certificate.instructor_name }}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 pt-6 border-t border-mist">
+                    <div>
+                        <div class="text-[10px] font-mono text-smoke uppercase tracking-widest mb-1">Délivré le</div>
+                        <div class="font-medium text-sm">{{ certificate.issued_at|date:"d F Y" }}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono text-smoke uppercase tracking-widest mb-1">Score / Completion</div>
+                        <div class="font-medium text-sm" style="color: {% if certificate.quiz_score %}var(--amber){% else %}var(--forest){% endif %};">
+                            {% if certificate.quiz_score %}{{ certificate.quiz_score|floatformat:0 }}% au quiz{% else %}100% complété{% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-mono text-smoke uppercase tracking-widest mb-1">Numéro</div>
+                        <div class="font-mono text-xs font-medium">{{ certificate.certificate_number }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-mist text-center">
+                <a href="{% url 'certificates:verify_search' %}" class="btn-ghost">
+                    {% include 'partials/icons.html' with name='search' class='w-4 h-4' %}
+                    Vérifier un autre certificat
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

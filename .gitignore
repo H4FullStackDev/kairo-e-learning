@@ -1,0 +1,36 @@
+# Environnement virtuel
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Variables d'environnement
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tailwind
+theme/static_src/node_modules/
+theme/static/css/dist/
+
+
+NPM_BIN_PATH = r'C:\Program Files\nodejs\npm.cmd'

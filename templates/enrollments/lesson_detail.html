@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ lesson.title }} — {{ course.title }}{% endblock %}
+
+{% block content %}
+<!-- Layout 2 colonnes -->
+<div class="flex min-h-[calc(100vh-5rem)]">
+
+    <!-- SIDEBAR GAUCHE : Navigation du cours -->
+    <!-- SIDEBAR GAUCHE : Navigation du cours -->
+<aside class="learning-sidebar hidden lg:flex w-80 flex-shrink-0">
+    <!-- Header sidebar -->
+    <div class="sidebar-header">
+        <a href="{% url 'enrollments:my_courses' %}" class="sidebar-back-link">
+            {% include 'partials/icons.html' with name='arrow-left' class='w-3.5 h-3.5' %}
+            Mes cours
+        </a>
+        <div class="sidebar-course-title">{{ course.title }}</div>
+
+        {% if enrollment %}
+        <div class="sidebar-progress-info">
+            <span class="meta">{{ enrollment.completed_lessons_count }}/{{ enrollment.total_lessons_count }} leçons</span>
+            <span class="percent" id="sidebar-progress">{{ enrollment.progress_percentage }}%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-bar-fill" id="sidebar-progress-bar" style="width: {{ enrollment.progress_percentage }}%;"></div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Liste des chapitres -->
+    <div class="sidebar-chapters">
+        {% for chapter in chapters %}
+        <div class="sidebar-chapter {% if lesson.chapter.id == chapter.id %}open{% endif %}">
+            <button type="button" class="sidebar-chapter-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="sidebar-chapter-header-left">
+                    <span class="sidebar-chapter-number">{% if chapter.order < 10 %}0{% endif %}{{ chapter.order }}</span>
+                    <div class="sidebar-chapter-info">
+                        <div class="sidebar-chapter-title">{{ chapter.title }}</div>
+                        <div class="sidebar-chapter-meta">{{ chapter.total_lessons }} leçon{{ chapter.total_lessons|pluralize }}</div>
+                    </div>
+                </div>
+                <span class="sidebar-chapter-chevron">
+                    {% include 'partials/icons.html' with name='chevron-down' class='w-4 h-4' %}
+                </span>
+            </button>
+
+            <div class="sidebar-chapter-content">
+                {% for l in chapter.lessons.all %}
+                <a href="{% url 'enrollments:lesson_detail' course.slug l.id %}"
+                   class="sidebar-lesson {% if l.id == lesson.id %}active{% endif %} {% if l.id in completed_lesson_ids %}completed{% endif %}">
+                    <div class="sidebar-lesson-check">
+                        {% if l.id in completed_lesson_ids %}
+                            {% include 'partials/icons.html' with name='check' class='w-3 h-3' %}
+                        {% endif %}
+                    </div>
+                    <div class="sidebar-lesson-body">
+                        <div class="sidebar-lesson-title">{{ l.title }}</div>
+                        <div class="sidebar-lesson-meta">
+                            {% if l.content_type == 'VIDEO' %}
+                                {% include 'partials/icons.html' with name='video' class='w-3 h-3' %}
+                            {% elif l.content_type == 'PDF' %}
+                                {% include 'partials/icons.html' with name='file-text' class='w-3 h-3' %}
+                            {% else %}
+                                {% include 'partials/icons.html' with name='book' class='w-3 h-3' %}
+                            {% endif %}
+                            <span>{{ l.duration_minutes }} min</span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</aside>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="flex-1 min-w-0 bg-paper">
+        <div class="max-w-5xl mx-auto px-6 lg:px-10 py-10">
+
+            <!-- Breadcrumb + meta -->
+            <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+                <nav class="flex items-center gap-2 text-sm text-smoke">
+                    <a href="{% url 'courses:course_detail' course.slug %}" class="hover:text-obsidian transition-colors">{{ course.title }}</a>
+                    <span>/</span>
+                    <span class="text-obsidian">{{ lesson.chapter.title }}</span>
+                </nav>
+                <div class="text-mono text-xs text-smoke">
+                    Leçon {{ current_lesson_number }} sur {{ total_lessons }}
+                </div>
+            </div>
+
+            <!-- Titre leçon -->
+            <div class="mb-8">
+                <div class="eyebrow mb-3">{{ lesson.chapter.title }}</div>
+                <h1 class="text-display text-4xl md:text-5xl leading-tight mb-4">{{ lesson.title }}</h1>
+                <div class="flex items-center gap-4 text-sm text-smoke">
+                    <span class="flex items-center gap-1.5">
+                        {% include 'partials/icons.html' with name='clock' class='w-4 h-4' %}
+                        {{ lesson.duration_minutes }} min
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        {% if lesson.content_type == 'VIDEO' %}
+                            {% include 'partials/icons.html' with name='video' class='w-4 h-4' %}
+                            Vidéo
+                        {% elif lesson.content_type == 'PDF' %}
+                            {% include 'partials/icons.html' with name='file-text' class='w-4 h-4' %}
+                            Document PDF
+                        {% else %}
+                            {% include 'partials/icons.html' with name='book' class='w-4 h-4' %}
+                            Lecture
+                        {% endif %}
+                    </span>
+                    {% if lesson.is_free_preview %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider" style="background: var(--amber-glow); color: var(--amber-brand);">Aperçu gratuit</span>
+                    {% endif %}
+                </div>
+            </div>
+
+          <!-- PLAYER / CONTENU -->
+<div class="mb-8">
+    {% if lesson.content_type == 'VIDEO' %}
+        {% if lesson.video %}
+            <!-- Vidéo uploadée localement -->
+            <div class="video-player">
+                <video controls controlsList="nodownload" poster="{% if course.thumbnail %}{{ course.thumbnail.url }}{% endif %}">
+                    <source src="{{ lesson.video.url }}" type="video/mp4">
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                </video>
+            </div>
+        {% elif lesson.video_url %}
+            <!-- Vidéo YouTube / externe -->
+            <div class="video-player">
+                <iframe
+                    src="{{ lesson.video_url }}?rel=0&modestbranding=1"
+                    title="{{ lesson.title }}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen
+                    class="w-full h-full">
+                </iframe>
+            </div>
+            <div class="mt-3 text-xs text-smoke flex items-center gap-2">
+                {% include 'partials/icons.html' with name='sparkles' class='w-3.5 h-3.5' %}
+                Contenu vidéo fourni par YouTube · Qualité HD
+            </div>
+        {% else %}
+            <div class="video-player">
+                <div class="video-placeholder">
+                    {% include 'partials/icons.html' with name='video' class='w-16 h-16' %}
+                    <div class="text-center">
+                        <div class="font-medium mb-1">Vidéo à venir</div>
+                        <div class="text-sm">Le formateur ajoutera bientôt le contenu vidéo.</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% elif lesson.content_type == 'PDF' %}
+        {% if lesson.pdf_file %}
+            <div class="card">
+                <div class="flex items-center gap-4 mb-4 flex-wrap">
+                    <div class="w-14 h-14 rounded-xl bg-mist flex items-center justify-center text-smoke flex-shrink-0">
+                        {% include 'partials/icons.html' with name='file-text' class='w-7 h-7' %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-display text-xl mb-1 truncate">{{ lesson.title }}</div>
+                        <div class="text-sm text-smoke">Document PDF à étudier</div>
+                    </div>
+                    <a href="{{ lesson.pdf_file.url }}" target="_blank" class="btn-primary">
+                        {% include 'partials/icons.html' with name='download' class='w-4 h-4' %}
+                        Télécharger
+                    </a>
+                </div>
+                <iframe src="{{ lesson.pdf_file.url }}" class="w-full rounded-xl" style="height: 600px;"></iframe>
+            </div>
+        {% else %}
+            <div class="card text-center py-12 border-dashed">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-mist mb-4 text-smoke">
+                    {% include 'partials/icons.html' with name='file-text' class='w-8 h-8' %}
+                </div>
+                <p class="text-smoke">Document PDF à venir</p>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- Contenu texte uniquement : card d'ouverture -->
+        <div class="card" style="background: linear-gradient(135deg, var(--paper) 0%, var(--mist) 100%); border: none;">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-xl bg-obsidian text-ivory flex items-center justify-center flex-shrink-0">
+                    {% include 'partials/icons.html' with name='book' class='w-7 h-7' %}
+                </div>
+                <div>
+                    <div class="eyebrow mb-1">Leçon de lecture</div>
+                    <div class="font-display text-lg">{{ lesson.duration_minutes }} min de lecture</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+            <!-- Contenu texte -->
+            {% if lesson.text_content %}
+<div class="card mb-8">
+    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-mist">
+        <div class="w-8 h-8 rounded-lg bg-paper flex items-center justify-center text-smoke">
+            {% include 'partials/icons.html' with name='book' class='w-4 h-4' %}
+        </div>
+        <div>
+            <div class="eyebrow">Notes de la leçon</div>
+            <div class="text-xs text-smoke mt-0.5">Support écrit accompagnant la vidéo</div>
+        </div>
+    </div>
+    <div class="lesson-content-prose">{{ lesson.text_content|linebreaks }}</div>
+</div>
+{% endif %}
+
+            <!-- Toggle complétion + Navigation -->
+            {% if enrollment %}
+            <div class="card mb-8">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <div class="eyebrow mb-2">Progression</div>
+                        <div class="font-display text-xl">
+                            {% if progress.is_completed %}
+                                Leçon terminée ✓
+                            {% else %}
+                                Marquer cette leçon comme terminée
+                            {% endif %}
+                        </div>
+                    </div>
+                    <button id="toggleCompleteBtn" data-lesson-id="{{ lesson.id }}" class="{% if progress.is_completed %}btn-secondary{% else %}btn-primary{% endif %}">
+                        <span id="toggleBtnText">
+                            {% if progress.is_completed %}Marquer non terminée{% else %}Marquer comme terminée{% endif %}
+                        </span>
+                        <span id="toggleBtnIcon">
+                            {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+                        </span>
+                    </button>
+                </div>
+            </div>
+            {% elif lesson.is_free_preview %}
+            <div class="card mb-8" style="background: var(--amber-glow); border-color: var(--amber-light);">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <div class="eyebrow mb-2" style="color: var(--amber-brand);">Aperçu gratuit</div>
+                        <p class="text-ink">Inscrivez-vous pour débloquer toutes les leçons et suivre votre progression.</p>
+                    </div>
+                    <a href="{% url 'courses:course_detail' course.slug %}" class="btn-primary">
+                        <span>S'inscrire au cours</span>
+                        {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+           
+            <div class="grid md:grid-cols-2 gap-4 mb-12">
+                {% if prev_lesson %}
+                <a href="{% url 'enrollments:lesson_detail' course.slug prev_lesson.id %}" class="card group hover:border-obsidian">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-mist flex items-center justify-center flex-shrink-0 group-hover:bg-obsidian group-hover:text-ivory transition-colors">
+                            {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="eyebrow mb-1">Leçon précédente</div>
+                            <div class="font-medium text-sm text-obsidian truncate">{{ prev_lesson.title }}</div>
+                        </div>
+                    </div>
+                </a>
+                {% else %}
+                <div></div>
+                {% endif %}
+
+                {% if next_lesson %}
+                <a href="{% url 'enrollments:lesson_detail' course.slug next_lesson.id %}" class="card group hover:border-obsidian">
+                    <div class="flex items-center gap-3">
+                        <div class="min-w-0 flex-1 text-right">
+                            <div class="eyebrow mb-1">Leçon suivante</div>
+                            <div class="font-medium text-sm text-obsidian truncate">{{ next_lesson.title }}</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-mist flex items-center justify-center flex-shrink-0 group-hover:bg-obsidian group-hover:text-ivory transition-colors">
+                            {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                        </div>
+                    </div>
+                </a>
+                {% else %}
+                <a href="{% url 'enrollments:my_courses' %}" class="card group hover:border-forest" style="--hover-border: var(--forest);">
+                    <div class="flex items-center gap-3">
+                        <div class="min-w-0 flex-1 text-right">
+                            <div class="eyebrow mb-1" style="color: var(--forest);">Fin du cours</div>
+                            <div class="font-medium text-sm text-obsidian truncate">Retour à mes cours</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background: var(--forest); color: white;">
+                            {% include 'partials/icons.html' with name='award' class='w-4 h-4' %}
+                        </div>
+                    </div>
+                </a>
+                {% endif %}
+            </div>
+             <!-- COMMENTAIRES -->
+{% include 'interactions/partials/comments_section.html' with comments=lesson_comments comments_count=lesson_comments_count %}
+            <!-- Navigation précédent/suivant -->
+        </div>
+    </main>
+</div>
+
+<script>
+    // Toggle complétion (AJAX)
+    const toggleBtn = document.getElementById('toggleCompleteBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', async () => {
+            const lessonId = toggleBtn.dataset.lessonId;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+
+            toggleBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/apprentissage/api/lecon/${lessonId}/toggle/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Mettre à jour le bouton
+                    const btnText = document.getElementById('toggleBtnText');
+                    if (data.is_completed) {
+                        toggleBtn.className = 'btn-secondary';
+                        btnText.textContent = 'Marquer non terminée';
+                    } else {
+                        toggleBtn.className = 'btn-primary';
+                        btnText.textContent = 'Marquer comme terminée';
+                    }
+
+                    // Mettre à jour la progression
+                    document.getElementById('sidebar-progress').textContent = data.progress_percentage + '%';
+                    document.getElementById('sidebar-progress-bar').style.width = data.progress_percentage + '%';
+
+                    // Mettre à jour l'état visuel de la leçon dans la sidebar
+                    const currentLessonLink = document.querySelector('.sidebar-lesson.active');
+                    if (currentLessonLink) {
+                        const check = currentLessonLink.querySelector('.sidebar-lesson-check');
+                        if (data.is_completed) {
+                            currentLessonLink.classList.add('completed');
+                            check.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                        } else {
+                            currentLessonLink.classList.remove('completed');
+                            check.innerHTML = '';
+                        }
+                    }
+
+                    // Toast notif
+                    const msg = data.is_completed ? '✓ Leçon terminée !' : 'Leçon marquée comme non terminée';
+                    showToast(msg, data.is_completed ? 'success' : 'info');
+
+                    // Si cours terminé
+                    if (data.is_course_completed) {
+                        setTimeout(() => {
+                            showToast('🎉 Félicitations ! Vous avez terminé ce cours.', 'success');
+                        }, 1000);
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showToast('Une erreur est survenue', 'error');
+            } finally {
+                toggleBtn.disabled = false;
+            }
+        });
+    }
+
+    // Fonction pour afficher un toast dynamique
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container') || (() => {
+            const c = document.createElement('div');
+            c.id = 'toast-container';
+            c.className = 'fixed top-24 right-6 z-[100] space-y-3 max-w-md';
+            document.body.appendChild(c);
+            return c;
+        })();
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '!' : 'i'}</div>
+            <div class="toast-content">${message}</div>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'toastOut 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+</script>
+{% endblock %}

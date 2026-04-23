@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block content %}
+<section class="bg-mesh min-h-screen py-10">
+    <div class="max-w-4xl mx-auto px-6 lg:px-10">
+
+        <!-- Header -->
+        <div class="mb-10">
+            <nav class="flex items-center gap-2 text-sm text-smoke mb-4">
+                <a href="{% url 'courses:course_detail' course.slug %}" class="hover:text-obsidian transition-colors">{{ course.title }}</a>
+                <span>/</span>
+                <span class="text-obsidian">Quiz</span>
+            </nav>
+
+            <div class="flex items-start justify-between flex-wrap gap-4">
+                <div class="flex-1 min-w-0">
+                    <div class="eyebrow mb-2">Évaluation</div>
+                    <h1 class="text-display text-4xl md:text-5xl mb-3">{{ quiz.title }}</h1>
+                    {% if quiz.description %}
+                    <p class="text-ink/70 max-w-2xl">{{ quiz.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Meta info -->
+            <div class="flex flex-wrap items-center gap-6 mt-6 text-sm">
+                <div class="flex items-center gap-2">
+                    {% include 'partials/icons.html' with name='layers' class='w-4 h-4 text-smoke' %}
+                    <span class="text-ink">{{ quiz.total_questions }} questions</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% include 'partials/icons.html' with name='star' class='w-4 h-4 text-smoke' %}
+                    <span class="text-ink">{{ quiz.total_points }} points au total</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% include 'partials/icons.html' with name='award' class='w-4 h-4 text-smoke' %}
+                    <span class="text-ink">{{ quiz.passing_score }}% requis pour réussir</span>
+                </div>
+                {% if quiz.time_limit_minutes > 0 %}
+                <div class="quiz-timer" id="quiz-timer">
+                    {% include 'partials/icons.html' with name='clock' class='w-4 h-4' %}
+                    <span id="timer-display">{{ quiz.time_limit_minutes }}:00</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Navigation entre questions (dots) -->
+        <div class="card mb-6 py-4 px-5">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+                <div class="eyebrow">Navigation</div>
+                <div class="text-xs text-smoke font-mono">
+                    <span id="answered-count">0</span>/{{ questions.count }} répondues
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2" id="question-dots">
+                {% for question in questions %}
+                <button type="button" onclick="scrollToQuestion({{ forloop.counter }})" class="quiz-question-dot" id="dot-{{ forloop.counter }}" data-question-id="{{ question.id }}">
+                    {{ forloop.counter }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Formulaire de quiz -->
+        <form method="POST" action="{% url 'quizzes:quiz_submit' attempt.id %}" id="quiz-form">
+            {% csrf_token %}
+
+            {% for question in questions %}
+            <div class="quiz-question mb-6 animate-fade-up" id="question-{{ forloop.counter }}" data-question-id="{{ question.id }}">
+                <!-- Header de question -->
+                <div class="flex items-start justify-between mb-6 gap-4 pb-5 border-b border-mist">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-mono text-xs text-smoke uppercase tracking-wider mb-3">
+                            Question {{ forloop.counter }} sur {{ questions.count }}
+                            <span class="mx-2">·</span>
+                            {{ question.points }} point{{ question.points|pluralize }}
+                        </div>
+                        <h2 class="text-display text-2xl leading-tight">{{ question.text }}</h2>
+                    </div>
+                    <span class="badge badge-ink flex-shrink-0">
+                        {% if question.question_type == 'SINGLE' %}Choix unique
+                        {% elif question.question_type == 'MULTIPLE' %}Choix multiples
+                        {% else %}Vrai / Faux{% endif %}
+                    </span>
+                </div>
+
+                <!-- Réponses -->
+                <div class="space-y-3">
+                    {% for answer in question.answers.all %}
+                    {% with letter="ABCDEFG"|slice:forloop.counter0|slice:"-1:" %}
+                    <label class="quiz-answer {% if question.question_type == 'MULTIPLE' %}is-checkbox{% endif %}" data-question="{{ question.id }}">
+                        <input
+                            type="{% if question.question_type == 'MULTIPLE' %}checkbox{% else %}radio{% endif %}"
+                            name="question_{{ question.id }}"
+                            value="{{ answer.id }}"
+                            class="quiz-answer-input"
+                        >
+                        <div class="quiz-answer-marker">
+                            {% if question.question_type == 'MULTIPLE' %}
+                                {% include 'partials/icons.html' with name='check' class='w-3 h-3' %}
+                            {% else %}
+                                <div class="w-2 h-2 rounded-full bg-current"></div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <span class="quiz-answer-letter">{{ letter }}.</span>
+                            {{ answer.text }}
+                        </div>
+                    </label>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Submit section -->
+            <div class="card text-center" style="background: linear-gradient(135deg, var(--obsidian), #1A1A1C); border: none;">
+                <div style="color: var(--ivory);">
+                    <div class="eyebrow mb-3" style="color: rgba(250, 250, 247, 0.6);">Prêt à soumettre ?</div>
+                    <h3 class="text-display text-3xl mb-4" style="color: var(--ivory);">Vérifiez vos réponses.</h3>
+                    <p class="max-w-xl mx-auto mb-6" style="color: rgba(250, 250, 247, 0.75);">
+                        Vous avez répondu à <strong id="answered-count-submit" style="color: var(--amber-light);">0</strong> question{{ questions.count|pluralize }} sur {{ questions.count }}. Une fois soumis, vous ne pourrez plus modifier vos réponses.
+                    </p>
+                    <button type="submit" class="btn-primary" id="submit-btn" style="background: var(--ivory); color: var(--obsidian);">
+                        <span>Soumettre le quiz</span>
+                        {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+    // Gestion des sélections
+    const answerLabels = document.querySelectorAll('.quiz-answer');
+    const questionDots = document.querySelectorAll('.quiz-question-dot');
+    const answeredCountEl = document.getElementById('answered-count');
+    const answeredCountSubmitEl = document.getElementById('answered-count-submit');
+
+    answerLabels.forEach(label => {
+        const input = label.querySelector('input');
+
+        label.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            // Pour radio : désélectionner les autres du même groupe
+            if (input.type === 'radio') {
+                document.querySelectorAll(`input[name="${input.name}"]`).forEach(r => {
+                    r.closest('.quiz-answer').classList.remove('selected');
+                });
+                input.checked = true;
+                label.classList.add('selected');
+            } else {
+                // Checkbox : toggle
+                input.checked = !input.checked;
+                label.classList.toggle('selected', input.checked);
+            }
+
+            updateProgress();
+        });
+    });
+
+    function updateProgress() {
+        let answeredCount = 0;
+        document.querySelectorAll('.quiz-question').forEach((qEl, idx) => {
+            const qId = qEl.dataset.questionId;
+            const hasAnswer = qEl.querySelector('input:checked');
+            const dot = document.getElementById(`dot-${idx + 1}`);
+
+            if (hasAnswer) {
+                answeredCount++;
+                dot.classList.add('answered');
+            } else {
+                dot.classList.remove('answered');
+            }
+        });
+
+        answeredCountEl.textContent = answeredCount;
+        answeredCountSubmitEl.textContent = answeredCount;
+    }
+
+    function scrollToQuestion(num) {
+        const el = document.getElementById(`question-${num}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Flash effect
+            el.style.transition = 'box-shadow 0.3s';
+            el.style.boxShadow = '0 0 0 4px rgba(217, 119, 6, 0.3)';
+            setTimeout(() => { el.style.boxShadow = ''; }, 800);
+
+            // Mettre à jour le dot "current"
+            document.querySelectorAll('.quiz-question-dot').forEach(d => d.classList.remove('current'));
+            document.getElementById(`dot-${num}`).classList.add('current');
+        }
+    }
+
+    // Confirmation avant submit
+    document.getElementById('quiz-form').addEventListener('submit', (e) => {
+        const totalQuestions = {{ questions.count }};
+        const answeredCount = parseInt(answeredCountEl.textContent);
+
+        if (answeredCount < totalQuestions) {
+            if (!confirm(`Vous avez répondu à ${answeredCount} question(s) sur ${totalQuestions}. Voulez-vous vraiment soumettre ?`)) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    {% if quiz.time_limit_minutes > 0 %}
+    // Timer
+    let timeLeft = {{ quiz.time_limit_minutes }} * 60;
+    const timerDisplay = document.getElementById('timer-display');
+    const timerEl = document.getElementById('quiz-timer');
+
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        if (timeLeft <= 60) timerEl.classList.add('danger');
+        else if (timeLeft <= 180) timerEl.classList.add('warning');
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById('quiz-form').submit();
+        }
+    }, 1000);
+    {% endif %}
+</script>
+{% endblock %}

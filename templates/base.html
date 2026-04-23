@@ -1,0 +1,149 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kairos{% endblock %} — Plateforme e-learning</title>
+    <meta name="description" content="Kairos, la plateforme d'apprentissage qui révèle votre potentiel.">
+
+    <!-- Polices Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,400;1,9..144,600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Favicon inline -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+
+    {% tailwind_css %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="antialiased">
+
+    <!-- Grain overlay (texture subtile sur tout le site) -->
+    <div class="grain-overlay"></div>
+
+    {% include 'partials/navbar.html' %}
+
+    <!-- Messages flash (en haut à droite, style toast) -->
+    {% if messages %}
+        <div class="fixed top-24 right-6 z-[100] space-y-3 max-w-md" id="toast-container">
+            {% for message in messages %}
+                <div class="toast toast-{{ message.tags|default:'info' }}" role="alert">
+                    <div class="toast-icon">
+                        {% if message.tags == 'success' %}✓
+                        {% elif message.tags == 'error' %}!
+                        {% elif message.tags == 'warning' %}⚠
+                        {% else %}i{% endif %}
+                    </div>
+                    <div class="toast-content">{{ message }}</div>
+                    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'partials/footer.html' %}
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- Auto-dismiss toasts après 5s -->
+    <script>
+        setTimeout(() => {
+            document.querySelectorAll('.toast').forEach(t => {
+                t.style.animation = 'toastOut 0.3s ease-in forwards';
+                setTimeout(() => t.remove(), 300);
+            });
+        }, 5000);
+    </script>
+    {% if user.is_authenticated %}
+<!-- Notifications : polling léger toutes les 30s -->
+<script>
+    const NOTIF_POLL_INTERVAL = 30000; // 30s
+    let notifDropdownOpen = false;
+
+    async function fetchNotifCount() {
+        try {
+            const res = await fetch('/interactions/notifications/count/');
+            const data = await res.json();
+            updateNotifBadge(data.count);
+        } catch (e) { console.error('Notif count error:', e); }
+    }
+
+    function updateNotifBadge(count) {
+        const badge = document.getElementById('notif-badge');
+        const countEl = document.getElementById('notif-unread-count');
+        if (!badge) return;
+
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+        if (countEl) {
+            countEl.textContent = count === 0 ? 'Aucune non lue' : `${count} non lue${count > 1 ? 's' : ''}`;
+        }
+    }
+
+    async function loadNotifDropdown() {
+        try {
+            const res = await fetch('/interactions/notifications/dropdown/');
+            const data = await res.json();
+            const list = document.getElementById('notif-list');
+            if (list) list.innerHTML = data.html;
+            updateNotifBadge(data.unread_count);
+        } catch (e) { console.error('Notif dropdown error:', e); }
+    }
+
+    function toggleNotifDropdown(e) {
+        e.stopPropagation();
+        const dropdown = document.getElementById('notif-dropdown');
+        if (!dropdown) return;
+
+        notifDropdownOpen = !dropdown.classList.contains('hidden');
+        if (!notifDropdownOpen) {
+            dropdown.classList.remove('hidden');
+            notifDropdownOpen = true;
+            loadNotifDropdown();
+        } else {
+            dropdown.classList.add('hidden');
+            notifDropdownOpen = false;
+        }
+    }
+
+    async function markAllNotifRead(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                     document.cookie.split('csrftoken=')[1]?.split(';')[0];
+        try {
+            await fetch('/interactions/notifications/tout-lire/', {
+                method: 'POST',
+                headers: {'X-CSRFToken': csrf},
+            });
+            loadNotifDropdown();
+        } catch (err) { console.error(err); }
+    }
+
+    // Fermer dropdown si click à l'extérieur
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('notif-dropdown');
+        const bell = document.getElementById('notif-bell');
+        if (dropdown && !dropdown.classList.contains('hidden') && bell && !bell.contains(e.target)) {
+            dropdown.classList.add('hidden');
+            notifDropdownOpen = false;
+        }
+    });
+
+    // Initial fetch + polling
+    fetchNotifCount();
+    setInterval(fetchNotifCount, NOTIF_POLL_INTERVAL);
+</script>
+{% endif %}
+</body>
+</html>

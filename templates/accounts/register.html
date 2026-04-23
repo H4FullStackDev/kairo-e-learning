@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block content %}
+<section class="min-h-[calc(100vh-5rem)] grid lg:grid-cols-2">
+
+    <!-- Côté gauche - éditorial -->
+    <div class="bg-obsidian text-ivory p-10 lg:p-16 flex flex-col justify-between relative overflow-hidden">
+        <!-- Décor -->
+        <div class="absolute top-0 right-0 text-display text-[20rem] leading-none text-ivory/[0.03] pointer-events-none">K</div>
+
+        <div class="relative z-10">
+            <a href="{% url 'accounts:home' %}" class="inline-flex items-center gap-2 text-fog hover:text-ivory transition-colors text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Retour à l'accueil
+            </a>
+        </div>
+
+        <div class="relative z-10 max-w-md">
+            <div class="eyebrow text-fog mb-6">Rejoignez-nous</div>
+            <h2 class="text-display text-4xl md:text-5xl leading-tight mb-6">
+                Le meilleur moment pour commencer, c'est <em class="text-display-italic text-amber-light">aujourd'hui.</em>
+            </h2>
+            <p class="text-fog leading-relaxed mb-10">
+                Accédez à des dizaines de cours, apprenez à votre rythme, obtenez des certifications reconnues.
+            </p>
+
+            <!-- Social proof mini -->
+            <div class="flex items-center gap-4 pt-8 border-t border-ivory/10">
+                <div class="flex -space-x-2">
+                    <div class="w-10 h-10 rounded-full bg-amber-light border-2 border-obsidian flex items-center justify-center text-obsidian font-medium text-sm">A</div>
+                    <div class="w-10 h-10 rounded-full bg-amber-brand border-2 border-obsidian flex items-center justify-center text-ivory font-medium text-sm">K</div>
+                    <div class="w-10 h-10 rounded-full bg-ivory border-2 border-obsidian flex items-center justify-center text-obsidian font-medium text-sm">M</div>
+                </div>
+                <div class="text-sm text-fog">
+                    <strong class="text-ivory">+2000 étudiants</strong> ont déjà commencé.
+                </div>
+            </div>
+        </div>
+
+        <div class="relative z-10 text-mono text-xs text-fog">
+            © 2026 Kairos · Lomé
+        </div>
+    </div>
+
+    <!-- Côté droit - formulaire -->
+    <div class="p-10 lg:p-16 flex items-center">
+        <div class="w-full max-w-md mx-auto">
+            <div class="eyebrow mb-3">Créer un compte</div>
+            <h1 class="text-display text-4xl mb-2">Commençons.</h1>
+            <p class="text-smoke mb-10">Quelques informations pour démarrer votre parcours.</p>
+
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="form-label">Prénom</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}<p class="form-error">{{ form.first_name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="form-label">Nom</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}<p class="form-error">{{ form.last_name.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Nom d'utilisateur</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<p class="form-error">{{ form.username.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div>
+                    <label class="form-label">Email</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<p class="form-error">{{ form.email.errors.0 }}</p>{% endif %}
+                </div>
+
+                <div>
+                    <label class="form-label">Je m'inscris en tant que</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        {% for radio in form.role %}
+                            <label class="relative cursor-pointer block">
+                                <input type="radio" name="{{ radio.name }}" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %} class="peer absolute opacity-0">
+                                <div class="p-4 border border-mist rounded-xl peer-checked:border-obsidian peer-checked:bg-mist transition-all hover:border-fog">
+                                    <div class="text-mono text-xs text-smoke mb-1">0{{ forloop.counter }}</div>
+                                    <div class="font-medium text-obsidian">{{ radio.choice_label }}</div>
+                                </div>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Mot de passe</label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}<p class="form-error">{{ form.password1.errors.0 }}</p>{% endif %}
+                    <p class="form-hint">Minimum 8 caractères.</p>
+                </div>
+
+                <div>
+                    <label class="form-label">Confirmer le mot de passe</label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}<p class="form-error">{{ form.password2.errors.0 }}</p>{% endif %}
+                </div>
+
+                {% if form.non_field_errors %}
+                    <div class="bg-red-50 text-crimson p-3 rounded-xl text-sm" style="color: var(--crimson); background: #FEF2F2;">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <button type="submit" class="btn-primary w-full justify-center">
+                    <span>Créer mon compte</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                </button>
+            </form>
+
+            <div class="mt-8 pt-8 border-t border-mist text-center text-sm text-smoke">
+                Déjà inscrit ? <a href="{% url 'accounts:login' %}" class="link-underline text-obsidian">Se connecter</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Override styles pour les inputs du form -->
+<style>
+    input[type="text"], input[type="email"], input[type="password"], textarea, select {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: white;
+        border: 1px solid var(--mist);
+        border-radius: 12px;
+        font-family: var(--font-body);
+        font-size: 0.9375rem;
+        color: var(--ink);
+        transition: all 0.2s var(--ease-out);
+    }
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: var(--obsidian);
+        box-shadow: 0 0 0 4px rgba(10, 10, 11, 0.06);
+    }
+</style>
+{% endblock %}

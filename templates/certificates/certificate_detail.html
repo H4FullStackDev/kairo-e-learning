@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Certificat {{ certificate.certificate_number }}{% endblock %}
+
+{% block content %}
+<section class="bg-mesh py-12 min-h-screen">
+    <div class="max-w-5xl mx-auto px-6 lg:px-10">
+
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm text-smoke mb-8">
+            <a href="{% url 'certificates:my_certificates' %}" class="hover:text-obsidian transition-colors">Mes certificats</a>
+            <span>/</span>
+            <span class="text-obsidian">{{ certificate.certificate_number }}</span>
+        </nav>
+
+        <!-- Header -->
+        <div class="mb-10 text-center">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style="background: var(--forest); color: white;">
+                {% include 'partials/icons.html' with name='award' class='w-10 h-10' %}
+            </div>
+            <div class="eyebrow mb-3" style="color: var(--forest);">Félicitations !</div>
+            <h1 class="text-display text-5xl md:text-6xl mb-3">Votre certificat est prêt.</h1>
+            <p class="text-ink/70 max-w-xl mx-auto">Téléchargez-le, partagez-le sur LinkedIn, imprimez-le — il est la preuve de votre réussite.</p>
+        </div>
+
+        <!-- Certificat en grand -->
+        <div class="mb-8">
+            <div class="bg-ivory rounded-2xl shadow-2xl overflow-hidden border-2 border-mist" style="aspect-ratio: 1.414 / 1; position: relative;">
+                <!-- Coins décoratifs -->
+                <div class="absolute top-6 left-6 w-12 h-12 border-t-2 border-l-2" style="border-color: var(--amber);"></div>
+                <div class="absolute top-6 right-6 w-12 h-12 border-t-2 border-r-2" style="border-color: var(--amber);"></div>
+                <div class="absolute bottom-6 left-6 w-12 h-12 border-b-2 border-l-2" style="border-color: var(--amber);"></div>
+                <div class="absolute bottom-6 right-6 w-12 h-12 border-b-2 border-r-2" style="border-color: var(--amber);"></div>
+
+                <!-- Cadre intérieur -->
+                <div class="absolute inset-10 border border-obsidian"></div>
+
+                <div class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
+                    <!-- Logo -->
+                    <div class="w-12 h-12 rounded-xl bg-obsidian text-ivory flex items-center justify-center mb-2 relative">
+                        <span class="text-display font-semibold text-lg">K</span>
+                        <div class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full" style="background: var(--amber);"></div>
+                    </div>
+                    <div class="font-display font-bold text-xs text-obsidian mb-1">KAIROS</div>
+                    <div class="text-mono text-[9px] text-smoke uppercase tracking-widest mb-6">E-LEARNING PLATFORM</div>
+
+                    <!-- Ligne amber -->
+                    <div class="w-12 h-px mb-4" style="background: var(--amber);"></div>
+
+                    <div class="eyebrow mb-3">Certificat de réussite</div>
+                    <div class="text-sm md:text-base text-ink mb-2">Ce certificat est décerné à</div>
+
+                    <!-- Nom -->
+                    <h2 class="text-display text-3xl md:text-5xl font-semibold text-obsidian mb-2" style="letter-spacing: -0.02em;">{{ certificate.student_name }}</h2>
+                    <div class="w-48 h-px mb-6 bg-obsidian/30"></div>
+
+                    <div class="text-sm text-ink mb-3">pour avoir complété avec succès le cours</div>
+
+                    <!-- Cours -->
+                    <div class="font-display italic text-xl md:text-2xl mb-2" style="color: var(--amber); letter-spacing: -0.01em;">
+                        « {{ certificate.course_title }} »
+                    </div>
+                    <div class="text-sm text-smoke mb-8">dispensé par {{ certificate.instructor_name }}</div>
+
+                    <!-- Infos bas -->
+                    <div class="grid grid-cols-3 gap-6 w-full max-w-2xl text-center pt-6 border-t border-mist">
+                        <div>
+                            <div class="text-[9px] font-mono text-smoke uppercase tracking-widest mb-1">Date</div>
+                            <div class="font-display font-semibold text-sm text-obsidian">{{ certificate.issued_at|date:"d F Y" }}</div>
+                        </div>
+                        <div>
+                            <div class="text-[9px] font-mono text-smoke uppercase tracking-widest mb-1">
+                                {% if certificate.quiz_score %}Score quiz{% else %}Complétion{% endif %}
+                            </div>
+                            <div class="font-display font-semibold text-sm" style="color: {% if certificate.quiz_score %}var(--amber){% else %}var(--forest){% endif %};">
+                                {% if certificate.quiz_score %}{{ certificate.quiz_score|floatformat:0 }}%{% else %}100%{% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-[9px] font-mono text-smoke uppercase tracking-widest mb-1">Numéro</div>
+                            <div class="font-mono text-xs text-obsidian font-medium">{{ certificate.certificate_number }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+            <a href="{% url 'certificates:download' certificate.verification_uuid %}" class="btn-primary justify-center">
+                {% include 'partials/icons.html' with name='download' class='w-4 h-4' %}
+                Télécharger le PDF
+            </a>
+            <a href="{% url 'certificates:verify' certificate.verification_uuid %}" target="_blank" class="btn-secondary justify-center">
+                {% include 'partials/icons.html' with name='shield' class='w-4 h-4' %}
+                Lien de vérification
+            </a>
+            <button onclick="copyVerificationLink()" class="btn-ghost justify-center">
+                {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+                <span id="copyText">Copier le lien</span>
+            </button>
+        </div>
+
+        <!-- Infos -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="card">
+                <div class="eyebrow mb-3">Authentification</div>
+                <h3 class="text-display text-xl mb-3">Ce certificat est vérifiable.</h3>
+                <p class="text-sm text-ink/70 leading-relaxed mb-4">
+                    N'importe qui peut vérifier l'authenticité de ce certificat en se rendant sur notre page de vérification publique et en entrant le numéro <strong class="text-obsidian font-mono">{{ certificate.certificate_number }}</strong>.
+                </p>
+                <a href="{% url 'certificates:verify_search' %}" target="_blank" class="link-underline text-sm">Page de vérification publique →</a>
+            </div>
+
+            <div class="card">
+                <div class="eyebrow mb-3">Détails</div>
+                <h3 class="text-display text-xl mb-3">Informations complètes.</h3>
+                <dl class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <dt class="text-smoke">Délivré le</dt>
+                        <dd class="text-obsidian font-medium">{{ certificate.issued_at|date:"d F Y, H:i" }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-smoke">Cours complété le</dt>
+                        <dd class="text-obsidian font-medium">{{ certificate.course_completed_at|date:"d F Y"|default:"—" }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-smoke">Formateur</dt>
+                        <dd class="text-obsidian font-medium">{{ certificate.instructor_name }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-smoke">Numéro</dt>
+                        <dd class="text-obsidian font-mono font-medium">{{ certificate.certificate_number }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function copyVerificationLink() {
+        const url = `${window.location.origin}{% url 'certificates:verify' certificate.verification_uuid %}`;
+        navigator.clipboard.writeText(url).then(() => {
+            const text = document.getElementById('copyText');
+            const original = text.textContent;
+            text.textContent = 'Copié !';
+            setTimeout(() => { text.textContent = original; }, 2000);
+        });
+    }
+</script>
+{% endblock %}

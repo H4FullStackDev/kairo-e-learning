@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Historique — {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<section class="bg-mesh py-12">
+    <div class="max-w-4xl mx-auto px-6 lg:px-10">
+        <nav class="flex items-center gap-2 text-sm text-smoke mb-8">
+            <a href="{% url 'courses:course_detail' course.slug %}" class="hover:text-obsidian transition-colors">{{ course.title }}</a>
+            <span>/</span>
+            <span class="text-obsidian">Historique du quiz</span>
+        </nav>
+
+        <div class="mb-10">
+            <div class="eyebrow mb-3">Historique</div>
+            <h1 class="text-display text-5xl mb-3">{{ quiz.title }}</h1>
+            {% if best_attempt %}
+            <p class="text-ink/70">Meilleur score : <strong class="text-obsidian">{{ best_attempt.percentage|floatformat:0 }}%</strong></p>
+            {% endif %}
+        </div>
+
+        {% if attempts %}
+        <div class="space-y-4">
+            {% for attempt in attempts %}
+            <a href="{% url 'quizzes:quiz_result' attempt.id %}" class="card flex items-center gap-6 hover:border-obsidian">
+                <div class="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 {% if attempt.is_passed %}bg-green-100{% else %}bg-red-100{% endif %}" style="{% if attempt.is_passed %}background: #DCFCE7; color: var(--forest);{% else %}background: #FEE2E2; color: var(--crimson);{% endif %}">
+                    {% if attempt.is_passed %}
+                        {% include 'partials/icons.html' with name='check' class='w-6 h-6' %}
+                    {% else %}
+                        {% include 'partials/icons.html' with name='x' class='w-6 h-6' %}
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-display text-lg mb-1">Tentative #{{ forloop.revcounter }}</div>
+                    <div class="text-sm text-smoke">{{ attempt.started_at|date:"d F Y à H:i" }}</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-display text-3xl font-semibold">{{ attempt.percentage|floatformat:0 }}%</div>
+                    <div class="text-mono text-xs text-smoke">{{ attempt.score }}/{{ attempt.total_points }} pts</div>
+                </div>
+                <div class="text-smoke">
+                    {% include 'partials/icons.html' with name='arrow-right' class='w-5 h-5' %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="mt-8 text-center">
+            <a href="{% url 'courses:course_detail' course.slug %}" class="btn-ghost">
+                {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+                Retour au cours
+            </a>
+        </div>
+
+        {% else %}
+        <div class="card text-center py-12">
+            <p class="text-smoke">Aucune tentative enregistrée.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

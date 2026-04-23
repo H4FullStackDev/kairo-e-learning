@@ -1,0 +1,26 @@
+{% if notifications %}
+    {% for notif in notifications %}
+    <a href="{% url 'interactions:mark_read' notif.id %}" class="notif-item {% if not notif.is_read %}unread{% endif %}">
+        <div class="notif-item-icon">
+            {% include 'partials/icons.html' with name=notif.get_icon_name class='w-4 h-4' %}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-obsidian mb-0.5 leading-tight">{{ notif.title }}</div>
+            {% if notif.message %}
+            <div class="text-xs text-smoke line-clamp-2 mb-1 leading-snug">{{ notif.message }}</div>
+            {% endif %}
+            <div class="text-[10px] font-mono text-smoke uppercase tracking-wider">{{ notif.created_at|timesince }}</div>
+        </div>
+        {% if not notif.is_read %}
+        <div class="notif-unread-dot"></div>
+        {% endif %}
+    </a>
+    {% endfor %}
+{% else %}
+<div class="p-10 text-center">
+    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-mist text-fog mb-3">
+        {% include 'partials/icons.html' with name='sparkles' class='w-6 h-6' %}
+    </div>
+    <p class="text-sm text-smoke">Aucune notification pour l'instant.</p>
+</div>
+{% endif %}

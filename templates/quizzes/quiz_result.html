@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Résultats — {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<section class="bg-mesh min-h-screen py-10">
+    <div class="max-w-4xl mx-auto px-6 lg:px-10">
+
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm text-smoke mb-8">
+            <a href="{% url 'courses:course_detail' course.slug %}" class="hover:text-obsidian transition-colors">{{ course.title }}</a>
+            <span>/</span>
+            <span class="text-obsidian">Résultats du quiz</span>
+        </nav>
+
+        <!-- HERO RÉSULTATS -->
+        <div class="card mb-8 text-center p-10 animate-fade-up" style="{% if attempt.is_passed %}background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border-color: #86EFAC;{% else %}background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); border-color: #FCA5A5;{% endif %}">
+            <div class="mb-6">
+                {% if attempt.is_passed %}
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style="background: var(--forest); color: white;">
+                    {% include 'partials/icons.html' with name='award' class='w-10 h-10' %}
+                </div>
+                <div class="eyebrow mb-2" style="color: var(--forest);">Réussi !</div>
+                <h1 class="text-display text-5xl mb-3">Bravo !</h1>
+                <p class="text-ink/70 max-w-lg mx-auto">Vous avez réussi ce quiz avec brio. Continuez sur cette lancée !</p>
+                {% else %}
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4" style="background: var(--crimson); color: white;">
+                    {% include 'partials/icons.html' with name='x' class='w-10 h-10' %}
+                </div>
+                <div class="eyebrow mb-2" style="color: var(--crimson);">Quiz non réussi</div>
+                <h1 class="text-display text-5xl mb-3">Presque !</h1>
+                <p class="text-ink/70 max-w-lg mx-auto">Vous avez besoin d'au moins {{ quiz.passing_score }}% pour réussir. Révisez et réessayez !</p>
+                {% endif %}
+            </div>
+
+            <!-- Score circle -->
+            <div class="flex justify-center mb-6">
+                <svg class="score-circle" viewBox="0 0 200 200">
+                    <circle cx="100" cy="100" r="85" class="score-circle-bg"/>
+                    <circle
+                        cx="100" cy="100" r="85"
+                        class="score-circle-progress"
+                        style="stroke: {% if attempt.is_passed %}var(--forest){% else %}var(--crimson){% endif %}; stroke-dasharray: 534; stroke-dashoffset: {% widthratio attempt.percentage|floatformat:0 100 534 %};"
+                    />
+                    <text x="100" y="105" text-anchor="middle" class="score-circle-value">{{ attempt.percentage|floatformat:0 }}%</text>
+                    <text x="100" y="125" text-anchor="middle" class="text-mono" style="font-size: 11px; fill: var(--smoke); text-transform: uppercase; letter-spacing: 0.1em;">Score</text>
+                </svg>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-4 max-w-md mx-auto">
+                <div>
+                    <div class="text-display text-2xl font-semibold">{{ attempt.score }}</div>
+                    <div class="text-[10px] font-mono uppercase tracking-wider text-smoke">Points gagnés</div>
+                </div>
+                <div>
+                    <div class="text-display text-2xl font-semibold">{{ attempt.total_points }}</div>
+                    <div class="text-[10px] font-mono uppercase tracking-wider text-smoke">Points totaux</div>
+                </div>
+                <div>
+                    <div class="text-display text-2xl font-semibold">{{ quiz.passing_score }}%</div>
+                    <div class="text-[10px] font-mono uppercase tracking-wider text-smoke">Requis</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CORRECTION DÉTAILLÉE -->
+        {% if quiz.show_correct_answers %}
+        <div class="mb-8">
+            <div class="flex items-baseline gap-4 mb-6">
+                <span class="text-mono text-sm text-smoke">→</span>
+                <h2 class="text-display text-3xl">Correction détaillée.</h2>
+            </div>
+
+            {% for item in questions_with_results %}
+            <div class="quiz-question mb-5">
+                <!-- Header -->
+                <div class="flex items-start justify-between mb-6 gap-4 pb-5 border-b border-mist">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-mono text-xs text-smoke uppercase tracking-wider">Question {{ forloop.counter }}</span>
+                            {% if item.is_correct %}
+                                <span class="badge badge-forest">
+                                    {% include 'partials/icons.html' with name='check' class='w-3 h-3' %}
+                                    Correct
+                                </span>
+                            {% elif item.was_answered %}
+                                <span class="badge" style="background: #FEE2E2; color: var(--crimson); border-color: #FCA5A5;">
+                                    {% include 'partials/icons.html' with name='x' class='w-3 h-3' %}
+                                    Incorrect
+                                </span>
+                            {% else %}
+                                <span class="badge badge-amber">Non répondu</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="text-display text-xl leading-tight">{{ item.question.text }}</h3>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-mono text-sm font-medium">
+                            {% if item.is_correct %}+{{ item.question.points }}{% else %}0{% endif %} / {{ item.question.points }}
+                        </div>
+                        <div class="text-[10px] font-mono uppercase tracking-wider text-smoke">pts</div>
+                    </div>
+                </div>
+
+                <!-- Réponses avec marquage -->
+                <div class="space-y-3 mb-4">
+                    {% for ans_data in item.answers %}
+                    {% with letter="ABCDEFG"|slice:forloop.counter0|slice:"-1:" %}
+                    <div class="quiz-answer
+                        {% if ans_data.state == 'correct' %}result-correct
+                        {% elif ans_data.state == 'wrong' %}result-wrong
+                        {% elif ans_data.state == 'missed' %}result-missed{% endif %}
+                        {% if ans_data.was_selected %}selected{% endif %}"
+                        style="cursor: default;">
+                        <div class="quiz-answer-marker">
+                            {% if ans_data.state == 'correct' %}
+                                <span style="color: var(--forest);">{% include 'partials/icons.html' with name='check' class='w-3 h-3' %}</span>
+                            {% elif ans_data.state == 'wrong' %}
+                                <span style="color: var(--crimson);">{% include 'partials/icons.html' with name='x' class='w-3 h-3' %}</span>
+                            {% elif ans_data.state == 'missed' %}
+                                <span style="color: var(--amber);">{% include 'partials/icons.html' with name='check' class='w-3 h-3' %}</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <span class="quiz-answer-letter">{{ letter }}.</span>
+                            {{ ans_data.answer.text }}
+                            {% if ans_data.state == 'missed' %}
+                                <span class="text-xs text-amber-brand font-mono ml-2 uppercase tracking-wider">· Bonne réponse manquée</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+
+                <!-- Explication -->
+                {% if item.question.explanation %}
+                <div class="p-4 rounded-xl mt-4" style="background: var(--paper);">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-obsidian text-ivory flex items-center justify-center flex-shrink-0">
+                            {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+                        </div>
+                        <div>
+                            <div class="eyebrow mb-1">Explication</div>
+                            <p class="text-sm text-ink/80 leading-relaxed">{{ item.question.explanation }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ACTIONS -->
+        <div class="card text-center p-8">
+            <h3 class="text-display text-2xl mb-3">Et maintenant ?</h3>
+            <div class="flex flex-wrap gap-3 justify-center">
+                <a href="{% url 'courses:course_detail' course.slug %}" class="btn-ghost">
+                    {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+                    Retour au cours
+                </a>
+
+                {% if not attempt.is_passed and attempts_remaining != 0 %}
+                <a href="{% url 'quizzes:quiz_start' quiz.id %}" class="btn-primary">
+                    <span>Réessayer{% if attempts_remaining %} ({{ attempts_remaining }} restantes){% endif %}</span>
+                    {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                </a>
+                {% elif attempt.is_passed %}
+                <a href="{% url 'enrollments:my_courses' %}" class="btn-primary">
+                    <span>Mes cours</span>
+                    {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

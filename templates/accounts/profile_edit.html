@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier le profil{% endblock %}
+
+{% block content %}
+<section class="bg-mesh min-h-[calc(100vh-5rem)] py-16">
+    <div class="max-w-3xl mx-auto px-6 lg:px-10">
+
+        <div class="mb-10">
+            <a href="{% url 'accounts:profile' %}" class="inline-flex items-center gap-2 text-smoke hover:text-obsidian transition-colors text-sm mb-6">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Retour au profil
+            </a>
+            <div class="eyebrow mb-3">Paramètres</div>
+            <h1 class="text-display text-5xl">Modifier le profil</h1>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="card">
+                <h2 class="text-display text-2xl mb-6">Identité</h2>
+
+                <div class="grid md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="form-label">Prénom</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div>
+                        <label class="form-label">Nom</label>
+                        {{ form.last_name }}
+                    </div>
+                </div>
+                <div class="mt-5">
+                    <label class="form-label">Email</label>
+                    {{ form.email }}
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-display text-2xl mb-6">Photo de profil</h2>
+
+                <div class="flex items-center gap-6 mb-5">
+                    <div class="avatar avatar-lg">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="Avatar">
+                        {% else %}
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        {{ form.avatar }}
+                        <p class="form-hint">JPG, PNG. 2 Mo max.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-display text-2xl mb-6">Informations complémentaires</h2>
+
+                <div class="grid md:grid-cols-2 gap-5 mb-5">
+                    <div>
+                        <label class="form-label">Téléphone</label>
+                        {{ form.phone }}
+                    </div>
+                    <div>
+                        <label class="form-label">Date de naissance</label>
+                        {{ form.date_of_birth }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Biographie</label>
+                    {{ form.bio }}
+                    <p class="form-hint">Parlez un peu de vous, de vos intérêts, de votre parcours.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-4">
+                <a href="{% url 'accounts:profile' %}" class="btn-ghost">Annuler</a>
+                <button type="submit" class="btn-primary">
+                    <span>Enregistrer les modifications</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<style>
+    input[type="text"], input[type="email"], input[type="password"], input[type="tel"], input[type="date"], textarea, input[type="file"] {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: white;
+        border: 1px solid var(--mist);
+        border-radius: 12px;
+        font-family: var(--font-body);
+        font-size: 0.9375rem;
+        color: var(--ink);
+        transition: all 0.2s var(--ease-out);
+    }
+    input:focus, textarea:focus {
+        outline: none;
+        border-color: var(--obsidian);
+        box-shadow: 0 0 0 4px rgba(10, 10, 11, 0.06);
+    }
+    textarea {
+        min-height: 140px;
+        resize: vertical;
+    }
+    input[type="file"] {
+        padding: 0.5rem;
+        font-size: 0.8125rem;
+    }
+</style>
+{% endblock %}
