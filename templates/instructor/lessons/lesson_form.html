@@ -1,0 +1,199 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_list' %}">Mes cours</a>
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">{% if is_create %}Nouvelle leçon{% else %}Éditer leçon{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">{% if is_create %}Création{% else %}Édition{% endif %}</div>
+        <h1 class="instructor-page-title">
+            {% if is_create %}
+                Nouvelle <em class="text-display-italic" style="color: var(--amber);">leçon</em>
+            {% else %}
+                Éditer la leçon
+            {% endif %}
+        </h1>
+        <p class="instructor-page-subtitle">
+            Chapitre : <strong>{{ chapter.title }}</strong> · Cours : <strong>{{ course.title }}</strong>
+        </p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+            Retour
+        </a>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="max-w-3xl" id="lesson-form">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="card mb-4" style="background: #FEF2F2; border-color: #FCA5A5;">
+        <p class="text-sm" style="color: var(--crimson);">{{ form.non_field_errors|first }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Section 1 : Informations -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Informations générales</div>
+            <div class="form-section-subtitle">Titre et description de la leçon.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.title.id_for_label }}">
+                {{ form.title.label }}<span class="required">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="form-error">{{ form.title.errors|first }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.description.id_for_label }}">
+                {{ form.description.label }}
+            </label>
+            {{ form.description }}
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.order.id_for_label }}">
+                    {{ form.order.label }}<span class="required">*</span>
+                </label>
+                {{ form.order }}
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.duration_minutes.id_for_label }}">
+                    {{ form.duration_minutes.label }}<span class="required">*</span>
+                </label>
+                {{ form.duration_minutes }}
+                <div class="form-help">{{ form.duration_minutes.help_text }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2 : Type de contenu -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Type de contenu</div>
+            <div class="form-section-subtitle">Choisissez le format de votre leçon.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.content_type.id_for_label }}">
+                {{ form.content_type.label }}<span class="required">*</span>
+            </label>
+            {{ form.content_type }}
+            <div class="form-help">Le contenu requis dépend du type choisi.</div>
+        </div>
+
+        <!-- Champs conditionnels selon type -->
+        <div id="video-fields" class="content-type-fields">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.video_url.id_for_label }}">
+                    {{ form.video_url.label }}
+                </label>
+                {{ form.video_url }}
+                <div class="form-help">{{ form.video_url.help_text }}</div>
+            </div>
+
+            <div class="text-xs text-smoke font-mono uppercase tracking-wider my-3 text-center">— OU —</div>
+
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.video.id_for_label }}">
+                    {{ form.video.label }}
+                </label>
+                {% if object.video %}
+                <div class="mb-3 text-xs text-smoke">
+                    Vidéo actuelle : <a href="{{ object.video.url }}" target="_blank" class="text-amber-brand">{{ object.video.name }}</a>
+                </div>
+                {% endif %}
+                {{ form.video }}
+                <div class="form-help">{{ form.video.help_text }}</div>
+            </div>
+        </div>
+
+        <div id="pdf-fields" class="content-type-fields hidden">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.pdf_file.id_for_label }}">
+                    {{ form.pdf_file.label }}
+                </label>
+                {% if object.pdf_file %}
+                <div class="mb-3 text-xs text-smoke">
+                    PDF actuel : <a href="{{ object.pdf_file.url }}" target="_blank" class="text-amber-brand">{{ object.pdf_file.name }}</a>
+                </div>
+                {% endif %}
+                {{ form.pdf_file }}
+            </div>
+        </div>
+
+        <div id="text-fields" class="content-type-fields hidden">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.text_content.id_for_label }}">
+                    {{ form.text_content.label }}
+                </label>
+                {{ form.text_content }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3 : Options -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Options</div>
+            <div class="form-section-subtitle">Paramètres avancés de la leçon.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="flex items-start gap-3 cursor-pointer">
+                {{ form.is_free_preview }}
+                <div>
+                    <div class="form-label-pro mb-0">{{ form.is_free_preview.label }}</div>
+                    <div class="form-help">{{ form.is_free_preview.help_text }}</div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-4 border-t border-mist">
+        <div class="text-xs text-smoke">
+            <span class="text-crimson">*</span> Champs obligatoires
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">Annuler</a>
+            <button type="submit" class="btn-primary">
+                {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+                {% if is_create %}Créer la leçon{% else %}Enregistrer{% endif %}
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    // Affichage conditionnel selon le type de contenu
+    const contentTypeSelect = document.getElementById('id_content_type');
+    const videoFields = document.getElementById('video-fields');
+    const pdfFields = document.getElementById('pdf-fields');
+    const textFields = document.getElementById('text-fields');
+
+    function updateContentFields() {
+        const value = contentTypeSelect.value;
+        videoFields.classList.toggle('hidden', value !== 'VIDEO');
+        pdfFields.classList.toggle('hidden', value !== 'PDF');
+        textFields.classList.toggle('hidden', value !== 'TEXT');
+    }
+
+    contentTypeSelect.addEventListener('change', updateContentFields);
+    updateContentFields();
+</script>
+{% endblock %}

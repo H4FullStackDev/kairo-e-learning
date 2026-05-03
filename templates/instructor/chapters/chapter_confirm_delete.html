@@ -1,0 +1,58 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}Supprimer le chapitre{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">Supprimer chapitre</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="card" style="border-color: #FCA5A5; background: #FEF2F2;">
+        <div class="text-center py-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style="background: var(--crimson); color: white;">
+                {% include 'partials/icons.html' with name='x' class='w-8 h-8' %}
+            </div>
+            <div class="eyebrow mb-2" style="color: var(--crimson);">Action irréversible</div>
+            <h1 class="font-display text-3xl mb-3">Supprimer ce chapitre ?</h1>
+            <p class="text-ink/80 max-w-md mx-auto">
+                Vous êtes sur le point de supprimer définitivement le chapitre <strong>« {{ chapter.title }} »</strong>.
+            </p>
+        </div>
+
+        <div class="bg-white rounded-xl p-4 mb-6">
+            <p class="text-sm font-medium text-obsidian mb-3">Cette action entraînera :</p>
+            <ul class="space-y-2 text-sm text-ink">
+                <li class="flex items-start gap-2">
+                    <span style="color: var(--crimson);">✕</span>
+                    La suppression de toutes les leçons de ce chapitre
+                    <strong class="ml-1">({{ chapter.lessons.count }} leçon{{ chapter.lessons.count|pluralize }})</strong>
+                </li>
+                <li class="flex items-start gap-2">
+                    <span style="color: var(--crimson);">✕</span>
+                    La perte de la progression des étudiants sur ces leçons
+                </li>
+                <li class="flex items-start gap-2">
+                    <span style="color: var(--crimson);">✕</span>
+                    La suppression de tous les commentaires associés
+                </li>
+            </ul>
+        </div>
+
+        <form method="POST" class="flex items-center justify-between">
+            {% csrf_token %}
+            <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">
+                {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+                Annuler
+            </a>
+            <button type="submit" class="btn-primary" style="background: var(--crimson); color: white;">
+                {% include 'partials/icons.html' with name='x' class='w-4 h-4' %}
+                Supprimer
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

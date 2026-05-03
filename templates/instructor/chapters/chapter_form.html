@@ -1,0 +1,78 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_list' %}">Mes cours</a>
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">{% if is_create %}Nouveau chapitre{% else %}Éditer chapitre{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">{% if is_create %}Création{% else %}Édition{% endif %}</div>
+        <h1 class="instructor-page-title">
+            {% if is_create %}
+                Nouveau <em class="text-display-italic" style="color: var(--amber);">chapitre</em>
+            {% else %}
+                Éditer le chapitre
+            {% endif %}
+        </h1>
+        <p class="instructor-page-subtitle">
+            Cours : <strong>{{ course.title }}</strong>
+        </p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+            Retour
+        </a>
+    </div>
+</div>
+
+<form method="POST" class="max-w-2xl">
+    {% csrf_token %}
+
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Informations du chapitre</div>
+            <div class="form-section-subtitle">Un chapitre regroupe plusieurs leçons sur un thème.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.title.id_for_label }}">
+                {{ form.title.label }}<span class="required">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="form-error">{{ form.title.errors|first }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.description.id_for_label }}">
+                {{ form.description.label }}
+            </label>
+            {{ form.description }}
+        </div>
+
+        <div class="form-group" style="max-width: 200px;">
+            <label class="form-label-pro" for="{{ form.order.id_for_label }}">
+                {{ form.order.label }}<span class="required">*</span>
+            </label>
+            {{ form.order }}
+            <div class="form-help">{{ form.order.help_text }}</div>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-4 border-t border-mist">
+        <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">
+            {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+            {% if is_create %}Créer le chapitre{% else %}Enregistrer{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}

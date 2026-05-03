@@ -1,0 +1,229 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_list' %}">Mes cours</a>
+<span>/</span>
+<span class="current">{% if is_create %}Nouveau{% else %}Éditer{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">{% if is_create %}Création{% else %}Édition{% endif %}</div>
+        <h1 class="instructor-page-title">
+            {% if is_create %}
+                Nouveau <em class="text-display-italic" style="color: var(--amber);">cours</em>
+            {% else %}
+                {{ object.title }}
+            {% endif %}
+        </h1>
+        <p class="instructor-page-subtitle">
+            {% if is_create %}
+                Définissez les informations principales. Vous pourrez ajouter chapitres et leçons après.
+            {% else %}
+                Modifiez les paramètres de votre cours.
+            {% endif %}
+        </p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_list' %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+            Annuler
+        </a>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data" class="max-w-4xl">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="card mb-6" style="background: #FEF2F2; border-color: #FCA5A5;">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <!-- Section 1 : Informations générales -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Informations générales</div>
+            <div class="form-section-subtitle">Les informations essentielles pour décrire votre cours.</div>
+        </div>
+
+        <!-- Titre -->
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.title.id_for_label }}">
+                {{ form.title.label }}<span class="required">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="form-error">{{ form.title.errors|first }}</div>{% endif %}
+        </div>
+
+        <!-- Description courte -->
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.short_description.id_for_label }}">
+                {{ form.short_description.label }}<span class="required">*</span>
+            </label>
+            {{ form.short_description }}
+            <div class="form-help">{{ form.short_description.help_text }}</div>
+            {% if form.short_description.errors %}<div class="form-error">{{ form.short_description.errors|first }}</div>{% endif %}
+        </div>
+
+        <!-- Description complète -->
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.description.id_for_label }}">
+                {{ form.description.label }}<span class="required">*</span>
+            </label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="form-error">{{ form.description.errors|first }}</div>{% endif %}
+        </div>
+
+        <!-- Catégorie + Niveau (grid) -->
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.category.id_for_label }}">
+                    {{ form.category.label }}<span class="required">*</span>
+                </label>
+                {{ form.category }}
+                {% if form.category.errors %}<div class="form-error">{{ form.category.errors|first }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.level.id_for_label }}">
+                    {{ form.level.label }}<span class="required">*</span>
+                </label>
+                {{ form.level }}
+                {% if form.level.errors %}<div class="form-error">{{ form.level.errors|first }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2 : Médias -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Médias</div>
+            <div class="form-section-subtitle">Image de couverture et vidéo de présentation.</div>
+        </div>
+
+        <!-- Thumbnail -->
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.thumbnail.id_for_label }}">
+                {{ form.thumbnail.label }}
+            </label>
+            {% if object.thumbnail %}
+            <div class="mb-3 flex items-start gap-4">
+                <img src="{{ object.thumbnail.url }}" alt="" class="w-32 h-20 rounded-lg object-cover border border-mist">
+                <div class="text-xs text-smoke flex-1">
+                    Image actuelle. Sélectionnez un nouveau fichier pour la remplacer.
+                </div>
+            </div>
+            {% endif %}
+            {{ form.thumbnail }}
+            <div class="form-help">{{ form.thumbnail.help_text }}</div>
+            {% if form.thumbnail.errors %}<div class="form-error">{{ form.thumbnail.errors|first }}</div>{% endif %}
+        </div>
+
+        <!-- Trailer video -->
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.trailer_video.id_for_label }}">
+                {{ form.trailer_video.label }}
+            </label>
+            <input type="url" name="{{ form.trailer_video.name }}" value="{{ form.trailer_video.value|default:'' }}" placeholder="https://www.youtube.com/watch?v=..." class="kairos-input">
+            <div class="form-help">{{ form.trailer_video.help_text }}</div>
+        </div>
+    </div>
+
+    <!-- Section 3 : Tarification & Durée -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Tarification & durée</div>
+            <div class="form-section-subtitle">Prix du cours et durée totale estimée.</div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.price.id_for_label }}">
+                    {{ form.price.label }}
+                </label>
+                {{ form.price }}
+                {% if form.price.errors %}<div class="form-error">{{ form.price.errors|first }}</div>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.duration_hours.id_for_label }}">
+                    {{ form.duration_hours.label }}
+                </label>
+                {{ form.duration_hours }}
+                {% if form.duration_hours.errors %}<div class="form-error">{{ form.duration_hours.errors|first }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4 : Pédagogie -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Pédagogie</div>
+            <div class="form-section-subtitle">Objectifs et prérequis pour les étudiants.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.objectives.id_for_label }}">
+                {{ form.objectives.label }}
+            </label>
+            {{ form.objectives }}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.prerequisites.id_for_label }}">
+                {{ form.prerequisites.label }}
+            </label>
+            {{ form.prerequisites }}
+        </div>
+    </div>
+
+    <!-- Section 5 : Publication -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Publication</div>
+            <div class="form-section-subtitle">Définissez la visibilité de votre cours.</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.status.id_for_label }}">
+                {{ form.status.label }}
+            </label>
+            {{ form.status }}
+            <div class="form-help">
+                <strong>Brouillon</strong> : visible uniquement par vous. <strong>Publié</strong> : visible par tous les visiteurs.
+            </div>
+        </div>
+
+        {% if form.is_featured %}
+        <div class="form-group">
+            <label class="flex items-start gap-3 cursor-pointer">
+                {{ form.is_featured }}
+                <div>
+                    <div class="form-label-pro mb-0">{{ form.is_featured.label }}</div>
+                    <div class="form-help">{{ form.is_featured.help_text }}</div>
+                </div>
+            </label>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-between pt-4 border-t border-mist">
+        <div class="text-xs text-smoke">
+            <span class="text-crimson">*</span> Champs obligatoires
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'instructor:course_list' %}" class="btn-ghost">Annuler</a>
+            <button type="submit" class="btn-primary">
+                {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+                {% if is_create %}Créer le cours{% else %}Enregistrer{% endif %}
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}

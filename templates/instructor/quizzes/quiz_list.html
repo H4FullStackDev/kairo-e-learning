@@ -1,0 +1,103 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}Quiz · {{ course.title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_list' %}">Mes cours</a>
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">Quiz</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">Évaluations</div>
+        <h1 class="instructor-page-title">Quiz du <em class="text-display-italic" style="color: var(--amber);">cours</em></h1>
+        <p class="instructor-page-subtitle">{{ course.title }}</p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+            Retour au cours
+        </a>
+        <a href="{% url 'instructor:quiz_create' course.pk %}" class="btn-primary">
+            {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+            Nouveau quiz
+        </a>
+    </div>
+</div>
+
+{% if quizzes %}
+<div class="card !p-0 overflow-hidden">
+    <table class="instructor-table">
+        <thead>
+            <tr>
+                <th>Quiz</th>
+                <th class="text-center">Type</th>
+                <th class="text-center">Questions</th>
+                <th class="text-center">Tentatives</th>
+                <th class="text-center">Score min.</th>
+                <th class="text-center">Statut</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quiz in quizzes %}
+            <tr>
+                <td>
+                    <a href="{% url 'instructor:quiz_manage' quiz.pk %}" class="hover:opacity-80 transition-opacity">
+                        <div class="font-medium text-obsidian">{{ quiz.title }}</div>
+                        {% if quiz.chapter %}
+                        <div class="text-xs text-smoke mt-0.5">Chapitre : {{ quiz.chapter.title }}</div>
+                        {% endif %}
+                    </a>
+                </td>
+                <td class="text-center">
+                    {% if quiz.quiz_type == 'COURSE_FINAL' %}
+                    <span class="badge" style="background: #FEF3C7; color: var(--amber); border-color: var(--amber);">Final</span>
+                    {% else %}
+                    <span class="badge" style="background: #DBEAFE; color: var(--ocean); border-color: var(--ocean);">Chapitre</span>
+                    {% endif %}
+                </td>
+                <td class="text-center font-mono text-sm">{{ quiz.questions_count }}</td>
+                <td class="text-center font-mono text-sm">{{ quiz.attempts_count }}</td>
+                <td class="text-center font-mono text-sm">{{ quiz.passing_score }}%</td>
+                <td class="text-center">
+                    {% if quiz.is_active %}
+                    <span class="badge" style="background: #DCFCE7; color: var(--forest); border-color: var(--forest);">● Actif</span>
+                    {% else %}
+                    <span class="badge" style="background: var(--mist); color: var(--smoke);">○ Inactif</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="flex items-center justify-end gap-1">
+                        <a href="{% url 'instructor:quiz_manage' quiz.pk %}" class="comment-action" title="Gérer">
+                            {% include 'partials/icons.html' with name='settings' class='w-4 h-4' %}
+                        </a>
+                        <a href="{% url 'instructor:quiz_edit' quiz.pk %}" class="comment-action" title="Éditer">
+                            {% include 'partials/icons.html' with name='edit' class='w-4 h-4' %}
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        {% include 'partials/icons.html' with name='check' class='w-8 h-8' %}
+    </div>
+    <h3 class="font-display text-2xl mb-2">Aucun quiz pour ce cours</h3>
+    <p class="text-sm text-smoke mb-6 max-w-md mx-auto">Créez des quiz pour évaluer les connaissances de vos étudiants à la fin d'un chapitre ou du cours complet.</p>
+    <a href="{% url 'instructor:quiz_create' course.pk %}" class="btn-primary">
+        {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+        Créer le premier quiz
+    </a>
+</div>
+{% endif %}
+{% endblock %}

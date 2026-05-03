@@ -1,0 +1,182 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}Mes cours{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<span class="current">Mes cours</span>
+{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">Bibliothèque</div>
+        <h1 class="instructor-page-title">Mes <em class="text-display-italic" style="color: var(--amber);">cours</em></h1>
+        <p class="instructor-page-subtitle">Gérez l'ensemble de vos cours, chapitres et leçons.</p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_create' %}" class="btn-primary">
+            {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+            Nouveau cours
+        </a>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<div class="card mb-6 !p-4">
+    <div class="flex items-center gap-4 flex-wrap">
+
+        <!-- Tabs filtres -->
+        <div class="flex items-center gap-1 bg-paper p-1 rounded-lg">
+            <a href="?status=all" class="px-3 py-1.5 rounded text-xs font-medium transition-all {% if current_status == 'all' or not current_status %}bg-white text-obsidian shadow-sm{% else %}text-smoke hover:text-obsidian{% endif %}">
+                Tous <span class="font-mono ml-1 opacity-60">{{ stats.all }}</span>
+            </a>
+            <a href="?status=PUBLISHED" class="px-3 py-1.5 rounded text-xs font-medium transition-all {% if current_status == 'PUBLISHED' %}bg-white text-obsidian shadow-sm{% else %}text-smoke hover:text-obsidian{% endif %}">
+                Publiés <span class="font-mono ml-1 opacity-60">{{ stats.published }}</span>
+            </a>
+            <a href="?status=DRAFT" class="px-3 py-1.5 rounded text-xs font-medium transition-all {% if current_status == 'DRAFT' %}bg-white text-obsidian shadow-sm{% else %}text-smoke hover:text-obsidian{% endif %}">
+                Brouillons <span class="font-mono ml-1 opacity-60">{{ stats.draft }}</span>
+            </a>
+        </div>
+
+        <!-- Recherche -->
+        <form method="GET" class="flex-1 max-w-xs ml-auto">
+            {% if current_status %}<input type="hidden" name="status" value="{{ current_status }}">{% endif %}
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-smoke">
+                    {% include 'partials/icons.html' with name='search' class='w-4 h-4' %}
+                </span>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Rechercher un cours..." class="kairos-input !pl-9">
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des cours -->
+{% if courses %}
+<div class="card !p-0 overflow-hidden">
+    <table class="instructor-table">
+        <thead>
+            <tr>
+                <th>Cours</th>
+                <th class="text-center">Chapitres</th>
+                <th class="text-center">Leçons</th>
+                <th class="text-center">Inscrits</th>
+                <th class="text-center">Statut</th>
+                <th class="text-center">Modifié</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr>
+                <td>
+                    <a href="{% url 'instructor:course_manage' course.pk %}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        {% if course.thumbnail %}
+                        <img src="{{ course.thumbnail.url }}" alt="" class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
+                        {% else %}
+                        <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {% if course.category %}{{ course.category.color }}15{% else %}var(--paper){% endif %}; color: {% if course.category %}{{ course.category.color }}{% else %}var(--smoke){% endif %};">
+                            {% include 'partials/icons.html' with name=course.category.icon|default:'book' class='w-5 h-5' %}
+                        </div>
+                        {% endif %}
+                        <div class="min-w-0">
+                            <div class="font-medium text-obsidian truncate">{{ course.title }}</div>
+                            <div class="text-xs text-smoke font-mono uppercase tracking-wider">
+                                {{ course.category.name|default:'—' }} · {{ course.get_level_display }}
+                            </div>
+                        </div>
+                    </a>
+                </td>
+                <td class="text-center">
+                    <span class="font-mono text-sm">{{ course.chapters_count }}</span>
+                </td>
+                <td class="text-center">
+                    <span class="font-mono text-sm">{{ course.lessons_count }}</span>
+                </td>
+                <td class="text-center">
+                    <span class="font-mono font-medium">{{ course.enrollments_count }}</span>
+                </td>
+                <td class="text-center">
+                    <form method="POST" action="{% url 'instructor:course_toggle_status' course.pk %}" class="inline">
+                        {% csrf_token %}
+                        {% if course.status == 'PUBLISHED' %}
+                        <button type="submit" class="badge cursor-pointer hover:opacity-80 transition-opacity" style="background: #DCFCE7; color: var(--forest); border-color: var(--forest);" title="Cliquez pour dépublier">
+                            ● Publié
+                        </button>
+                        {% else %}
+                        <button type="submit" class="badge cursor-pointer hover:opacity-80 transition-opacity" style="background: var(--mist); color: var(--smoke);" title="Cliquez pour publier">
+                            ○ Brouillon
+                        </button>
+                        {% endif %}
+                    </form>
+                </td>
+                <td class="text-center">
+                    <span class="text-xs text-smoke font-mono">{{ course.updated_at|date:"d M y" }}</span>
+                </td>
+                <td>
+                    <div class="flex items-center justify-end gap-1">
+                        <a href="{% url 'instructor:course_manage' course.pk %}" class="comment-action" title="Gérer">
+                            {% include 'partials/icons.html' with name='settings' class='w-4 h-4' %}
+                        </a>
+                        <a href="{% url 'instructor:course_edit' course.pk %}" class="comment-action" title="Éditer">
+                            {% include 'partials/icons.html' with name='edit' class='w-4 h-4' %}
+                        </a>
+                        <a href="{% url 'courses:course_detail' course.slug %}" target="_blank" class="comment-action" title="Voir sur le site">
+                            {% include 'partials/icons.html' with name='arrow-right' class='w-4 h-4' %}
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="mt-6 flex items-center justify-between">
+    <p class="text-sm text-smoke">
+        Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }} ·
+        {{ paginator.count }} cours au total
+    </p>
+    <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn-ghost text-xs">
+            ← Précédent
+        </a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="btn-ghost text-xs">
+            Suivant →
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty state -->
+<div class="empty-state">
+    <div class="empty-state-icon">
+        {% include 'partials/icons.html' with name='book' class='w-8 h-8' %}
+    </div>
+    <h3 class="font-display text-2xl mb-2">
+        {% if search_query %}Aucun résultat{% else %}Aucun cours pour l'instant{% endif %}
+    </h3>
+    <p class="text-sm text-smoke mb-6 max-w-md mx-auto">
+        {% if search_query %}
+            Aucun cours ne correspond à « {{ search_query }} ». Essayez un autre terme.
+        {% else %}
+            Créez votre premier cours pour commencer à partager votre savoir.
+        {% endif %}
+    </p>
+    {% if not search_query %}
+    <a href="{% url 'instructor:course_create' %}" class="btn-primary">
+        {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+        Créer mon premier cours
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

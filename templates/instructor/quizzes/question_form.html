@@ -1,0 +1,150 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}{% if is_create %}Nouvelle question{% else %}Éditer question{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:quiz_manage' quiz.pk %}">{{ quiz.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">{% if is_create %}Nouvelle question{% else %}Éditer{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">{% if is_create %}Création{% else %}Édition{% endif %}</div>
+        <h1 class="instructor-page-title">
+            {% if is_create %}Nouvelle <em class="text-display-italic" style="color: var(--amber);">question</em>{% else %}Éditer la question{% endif %}
+        </h1>
+        <p class="instructor-page-subtitle">Quiz : <strong>{{ quiz.title }}</strong></p>
+    </div>
+</div>
+
+<form method="POST" class="max-w-3xl">
+    {% csrf_token %}
+
+    <!-- Question -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">La question</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.text.id_for_label }}">{{ form.text.label }}<span class="required">*</span></label>
+            {{ form.text }}
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.question_type.id_for_label }}">{{ form.question_type.label }}<span class="required">*</span></label>
+                {{ form.question_type }}
+                <div class="form-help">{{ form.question_type.help_text }}</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.points.id_for_label }}">{{ form.points.label }}<span class="required">*</span></label>
+                {{ form.points }}
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.order.id_for_label }}">{{ form.order.label }}<span class="required">*</span></label>
+                {{ form.order }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Réponses -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Réponses possibles</div>
+            <div class="form-section-subtitle">Cochez la (ou les) bonne(s) réponse(s).</div>
+        </div>
+
+        <div id="answers-list" class="space-y-2">
+            {% if existing_answers %}
+                {% for answer in existing_answers %}
+                <div class="answer-item flex items-center gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="answer_correct" value="{{ forloop.counter0 }}" {% if answer.is_correct %}checked{% endif %} class="kairos-checkbox">
+                    </label>
+                    <input type="text" name="answer_text" value="{{ answer.text }}" placeholder="Texte de la réponse..." class="kairos-input flex-1" required>
+                    <button type="button" onclick="removeAnswer(this)" class="comment-action" style="color: var(--crimson);">
+                        {% include 'partials/icons.html' with name='x' class='w-4 h-4' %}
+                    </button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- 4 réponses vides par défaut -->
+                {% for i in "0123" %}
+                <div class="answer-item flex items-center gap-2">
+                    <label class="flex items-center gap-2 cursor-pointer flex-shrink-0">
+                        <input type="checkbox" name="answer_correct" value="{{ forloop.counter0 }}" class="kairos-checkbox">
+                    </label>
+                    <input type="text" name="answer_text" placeholder="Réponse {{ forloop.counter }}..." class="kairos-input flex-1">
+                    <button type="button" onclick="removeAnswer(this)" class="comment-action" style="color: var(--crimson);">
+                        {% include 'partials/icons.html' with name='x' class='w-4 h-4' %}
+                    </button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <button type="button" onclick="addAnswer()" class="btn-ghost text-sm mt-3">
+            {% include 'partials/icons.html' with name='sparkles' class='w-3.5 h-3.5' %}
+            Ajouter une réponse
+        </button>
+    </div>
+
+    <!-- Explication -->
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Explication (optionnelle)</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.explanation.id_for_label }}">{{ form.explanation.label }}</label>
+            {{ form.explanation }}
+            <div class="form-help">{{ form.explanation.help_text }}</div>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-4 border-t border-mist">
+        <a href="{% url 'instructor:quiz_manage' quiz.pk %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">
+            {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+            {% if is_create %}Créer la question{% else %}Enregistrer{% endif %}
+        </button>
+    </div>
+</form>
+
+<script>
+    let answerCount = document.querySelectorAll('.answer-item').length;
+
+    function addAnswer() {
+        const container = document.getElementById('answers-list');
+        const div = document.createElement('div');
+        div.className = 'answer-item flex items-center gap-2';
+        div.innerHTML = `
+            <label class="flex items-center gap-2 cursor-pointer flex-shrink-0">
+                <input type="checkbox" name="answer_correct" value="${answerCount}" class="kairos-checkbox">
+            </label>
+            <input type="text" name="answer_text" placeholder="Nouvelle réponse..." class="kairos-input flex-1">
+            <button type="button" onclick="removeAnswer(this)" class="comment-action" style="color: var(--crimson);">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        `;
+        container.appendChild(div);
+        answerCount++;
+    }
+
+    function removeAnswer(btn) {
+        if (document.querySelectorAll('.answer-item').length > 2) {
+            btn.parentElement.remove();
+            // Réindexer les checkboxes
+            document.querySelectorAll('.answer-item input[type="checkbox"]').forEach((cb, i) => {
+                cb.value = i;
+            });
+        } else {
+            alert('Une question doit avoir au moins 2 réponses.');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}Étudiants{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<span class="current">Étudiants</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">Audience</div>
+        <h1 class="instructor-page-title">Mes <em class="text-display-italic" style="color: var(--amber);">étudiants</em></h1>
+        <p class="instructor-page-subtitle">{{ total_students }} étudiant{{ total_students|pluralize }} unique{{ total_students|pluralize }}</p>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-6 !p-4">
+    <form method="GET" class="flex items-center gap-4 flex-wrap">
+
+        <div class="flex items-center gap-1 bg-paper p-1 rounded-lg">
+            <a href="?{% if course_filter %}course={{ course_filter }}&{% endif %}status=all" class="px-3 py-1.5 rounded text-xs font-medium transition-all {% if status_filter == 'all' %}bg-white text-obsidian shadow-sm{% else %}text-smoke hover:text-obsidian{% endif %}">
+                Tous
+            </a>
+            <a href="?{% if course_filter %}course={{ course_filter }}&{% endif %}status=ACTIVE" class="px-3 py-1.5 rounded text-xs font-medium transition-all {% if status_filter == 'ACTIVE' %}bg-white text-obsidian shadow-sm{% else %}text-smoke hover:text-obsidian{% endif %}">
+                Actifs <span class="font-mono ml-1 opacity-60">{{ active_count }}</span>
+            </a>
+            <a href="?{% if course_filter %}course={{ course_filter }}&{% endif %}status=COMPLETED" class="px-3 py-1.5 rounded text-xs font-medium transition-all {% if status_filter == 'COMPLETED' %}bg-white text-obsidian shadow-sm{% else %}text-smoke hover:text-obsidian{% endif %}">
+                Terminés <span class="font-mono ml-1 opacity-60">{{ completed_count }}</span>
+            </a>
+        </div>
+
+        <select name="course" onchange="this.form.submit()" class="kairos-input !w-auto" style="max-width: 220px;">
+            <option value="">— Tous les cours —</option>
+            {% for c in my_courses %}
+            <option value="{{ c.id }}" {% if course_filter == c.id|stringformat:"s" %}selected{% endif %}>{{ c.title|truncatechars:30 }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="flex-1 max-w-xs ml-auto">
+            <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-smoke">{% include 'partials/icons.html' with name='search' class='w-4 h-4' %}</span>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Rechercher un étudiant..." class="kairos-input !pl-9">
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Liste -->
+{% if enrollments %}
+<div class="card !p-0 overflow-hidden">
+    <table class="instructor-table">
+        <thead>
+            <tr>
+                <th>Étudiant</th>
+                <th>Cours</th>
+                <th class="text-center">Progression</th>
+                <th class="text-center">Statut</th>
+                <th class="text-center">Inscrit le</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enrollment in enrollments %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-3">
+                        <div class="comment-avatar !w-9 !h-9 !text-xs">
+                            {% if enrollment.student.avatar %}
+                            <img src="{{ enrollment.student.avatar.url }}" alt="" class="w-full h-full object-cover">
+                            {% else %}
+                            {{ enrollment.student.first_name|first|upper }}{{ enrollment.student.last_name|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="font-medium text-obsidian text-sm">{{ enrollment.student.get_full_name|default:enrollment.student.username }}</div>
+                            <div class="text-xs text-smoke">{{ enrollment.student.email }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="text-sm text-obsidian truncate" style="max-width: 200px;">{{ enrollment.course.title }}</div>
+                </td>
+                <td class="text-center">
+                    <div class="inline-flex items-center gap-2">
+                        <div class="w-20 h-1.5 bg-mist rounded-full overflow-hidden">
+                            <div class="h-full bg-amber" style="width: {{ enrollment.progress_percentage }}%;"></div>
+                        </div>
+                        <span class="text-xs font-mono text-smoke">{{ enrollment.progress_percentage }}%</span>
+                    </div>
+                </td>
+                <td class="text-center">
+                    {% if enrollment.status == 'COMPLETED' %}
+                    <span class="badge" style="background: #DCFCE7; color: var(--forest); border-color: var(--forest);">Terminé</span>
+                    {% else %}
+                    <span class="badge" style="background: #DBEAFE; color: var(--ocean); border-color: var(--ocean);">Actif</span>
+                    {% endif %}
+                </td>
+                <td class="text-center text-xs text-smoke font-mono">
+                    {{ enrollment.enrolled_at|date:"d M y" }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">{% include 'partials/icons.html' with name='users' class='w-8 h-8' %}</div>
+    <h3 class="font-display text-lg mb-2">Aucun étudiant trouvé</h3>
+    <p class="text-sm text-smoke">Aucun étudiant ne correspond aux filtres actuels.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}{% if is_create %}Nouveau quiz{% else %}Éditer quiz{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<a href="{% url 'instructor:quiz_list' course.pk %}">Quiz</a>
+<span>/</span>
+<span class="current">{% if is_create %}Nouveau{% else %}Éditer{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">{% if is_create %}Création{% else %}Édition{% endif %}</div>
+        <h1 class="instructor-page-title">
+            {% if is_create %}Nouveau <em class="text-display-italic" style="color: var(--amber);">quiz</em>{% else %}Éditer le quiz{% endif %}
+        </h1>
+        <p class="instructor-page-subtitle">Cours : <strong>{{ course.title }}</strong></p>
+    </div>
+</div>
+
+<form method="POST" class="max-w-3xl">
+    {% csrf_token %}
+
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Informations du quiz</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.title.id_for_label }}">{{ form.title.label }}<span class="required">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="form-error">{{ form.title.errors|first }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="form-label-pro" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+            {{ form.description }}
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.quiz_type.id_for_label }}">{{ form.quiz_type.label }}<span class="required">*</span></label>
+                {{ form.quiz_type }}
+                <div class="form-help">{{ form.quiz_type.help_text }}</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.chapter.id_for_label }}">{{ form.chapter.label }}</label>
+                {{ form.chapter }}
+                <div class="form-help">{{ form.chapter.help_text }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Paramètres de passage</div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.passing_score.id_for_label }}">{{ form.passing_score.label }}<span class="required">*</span></label>
+                {{ form.passing_score }}
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.time_limit_minutes.id_for_label }}">{{ form.time_limit_minutes.label }}</label>
+                {{ form.time_limit_minutes }}
+                <div class="form-help">{{ form.time_limit_minutes.help_text }}</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label-pro" for="{{ form.max_attempts.id_for_label }}">{{ form.max_attempts.label }}<span class="required">*</span></label>
+                {{ form.max_attempts }}
+                <div class="form-help">{{ form.max_attempts.help_text }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-section-header">
+            <div class="form-section-title">Options</div>
+        </div>
+
+        
+
+        <div class="form-group">
+            <label class="flex items-start gap-3 cursor-pointer">
+                {{ form.is_active }}
+                <div>
+                    <div class="form-label-pro mb-0">{{ form.is_active.label }}</div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 pt-4 border-t border-mist">
+        <a href="{% url 'instructor:quiz_list' course.pk %}" class="btn-ghost">Annuler</a>
+        <button type="submit" class="btn-primary">
+            {% include 'partials/icons.html' with name='check' class='w-4 h-4' %}
+            {% if is_create %}Créer le quiz{% else %}Enregistrer{% endif %}
+        </button>
+    </div>
+</form>
+{% endblock %}

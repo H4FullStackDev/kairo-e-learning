@@ -20,7 +20,7 @@
             <div class="hidden lg:flex items-center gap-1">
                 <a href="{% url 'accounts:home' %}" class="nav-pill">Accueil</a>
                 <a href="{% url 'courses:course_list' %}" class="nav-pill">Cours</a>
-                <a href="#" class="nav-pill">Formateurs</a>
+                <!-- <a href="#" class="nav-pill">Formateurs</a> -->
                 <a href="#" class="nav-pill">À propos</a>
             </div>
 
@@ -82,12 +82,6 @@
     </div>
     <div class="py-2">
     {% if user.is_student or not user.is_instructor %}
-    <a href="{% url 'enrollments:my_courses' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-ink hover:bg-mist transition-colors">
-        <span class="text-smoke">{% include 'partials/icons.html' with name='graduation-cap' class='w-4 h-4' %}</span>
-        Mes cours
-    </a>
-    {% endif %}
-    {% if user.is_student or not user.is_instructor %}
 <a href="{% url 'enrollments:my_courses' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-ink hover:bg-mist transition-colors">
     <span class="text-smoke">{% include 'partials/icons.html' with name='graduation-cap' class='w-4 h-4' %}</span>
     Mes cours
@@ -97,6 +91,12 @@
     Mes certificats
 </a>
 {% endif %}
+        {% if user.is_instructor or user.is_superuser %}
+        <a href="{% url 'instructor:dashboard' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm bg-amber/5 text-amber hover:bg-amber/10 transition-colors border-b border-mist">
+            <span>{% include 'partials/icons.html' with name='graduation-cap' class='w-4 h-4' %}</span>
+            <strong>Espace Formateur</strong>
+        </a>
+        {% endif %}
 
     <a href="{% url 'accounts:profile' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-ink hover:bg-mist transition-colors">
         <span class="text-smoke">{% include 'partials/icons.html' with name='user' class='w-4 h-4' %}</span>

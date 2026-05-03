@@ -1,0 +1,162 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}{{ quiz.title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:20 }}</a>
+<span>/</span>
+<a href="{% url 'instructor:quiz_list' course.pk %}">Quiz</a>
+<span>/</span>
+<span class="current">{{ quiz.title|truncatechars:30 }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div class="flex-1">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="eyebrow">Quiz</div>
+            {% if quiz.is_active %}
+            <span class="badge" style="background: #DCFCE7; color: var(--forest); border-color: var(--forest);">● Actif</span>
+            {% else %}
+            <span class="badge" style="background: var(--mist); color: var(--smoke);">○ Inactif</span>
+            {% endif %}
+        </div>
+        <h1 class="instructor-page-title">{{ quiz.title }}</h1>
+        {% if quiz.description %}<p class="instructor-page-subtitle">{{ quiz.description }}</p>{% endif %}
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:quiz_edit' quiz.pk %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='edit' class='w-4 h-4' %}
+            Paramètres
+        </a>
+        <a href="{% url 'instructor:question_create' quiz.pk %}" class="btn-primary">
+            {% include 'partials/icons.html' with name='sparkles' class='w-4 h-4' %}
+            Nouvelle question
+        </a>
+    </div>
+</div>
+
+<!-- Stats du quiz -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Questions</span>
+            <div class="stat-card-icon">{% include 'partials/icons.html' with name='check' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ total_questions }}</div>
+        <div class="stat-card-trend neutral">{{ total_points }} points au total</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Tentatives</span>
+            <div class="stat-card-icon" style="background: #DBEAFE; color: var(--ocean);">{% include 'partials/icons.html' with name='users' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ total_attempts }}</div>
+        <div class="stat-card-trend neutral">{{ passed_attempts }} réussies</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Taux de réussite</span>
+            <div class="stat-card-icon" style="background: #DCFCE7; color: var(--forest);">{% include 'partials/icons.html' with name='star' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ pass_rate }}%</div>
+        <div class="stat-card-trend neutral">Score min. : {{ quiz.passing_score }}%</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Score moyen</span>
+            <div class="stat-card-icon" style="background: #FEF3C7; color: var(--amber);">{% include 'partials/icons.html' with name='zap' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ avg_score|floatformat:0 }}%</div>
+    </div>
+</div>
+
+<!-- Liste des questions -->
+<div class="mb-4">
+    <div class="eyebrow mb-1">Questions</div>
+    <h2 class="font-display text-xl text-obsidian">{{ total_questions }} question{{ total_questions|pluralize }}</h2>
+</div>
+
+{% if questions %}
+<div class="space-y-3">
+    {% for question in questions %}
+    <div class="card group">
+        <div class="flex items-start gap-4">
+            <div class="font-mono text-sm text-smoke flex-shrink-0 mt-1">Q{{ forloop.counter }}</div>
+
+            <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <div class="font-medium text-obsidian">{{ question.text }}</div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="badge text-[10px]">
+                            {% if question.question_type == 'SINGLE' %}Choix unique
+                            {% elif question.question_type == 'MULTIPLE' %}Choix multiple
+                            {% else %}Vrai/Faux{% endif %}
+                        </span>
+                        <span class="text-xs font-mono text-smoke">{{ question.points }} pt{{ question.points|pluralize }}</span>
+                    </div>
+                </div>
+
+                <!-- Réponses -->
+                <div class="space-y-1.5 mb-3">
+                    {% for answer in question.answers.all %}
+                    <div class="flex items-center gap-2 text-sm">
+                        {% if answer.is_correct %}
+                        <span class="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0" style="background: var(--forest); color: white;">
+                            {% include 'partials/icons.html' with name='check' class='w-2.5 h-2.5' %}
+                        </span>
+                        <span class="text-obsidian">{{ answer.text }}</span>
+                        {% else %}
+                        <span class="w-4 h-4 rounded-full border border-mist flex-shrink-0"></span>
+                        <span class="text-smoke">{{ answer.text }}</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if question.explanation %}
+                <div class="bg-paper rounded-lg p-3 text-xs text-ink/80 italic">
+                    <strong class="not-italic text-obsidian">Explication :</strong> {{ question.explanation }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                <a href="{% url 'instructor:question_edit' question.pk %}" class="comment-action" title="Éditer">
+                    {% include 'partials/icons.html' with name='edit' class='w-4 h-4' %}
+                </a>
+                <form method="POST" action="{% url 'instructor:question_delete' question.pk %}" class="inline" onsubmit="return confirm('Supprimer cette question ?');">
+                    {% csrf_token %}
+                    <button type="submit" class="comment-action" style="color: var(--crimson);" title="Supprimer">
+                        {% include 'partials/icons.html' with name='x' class='w-4 h-4' %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">{% include 'partials/icons.html' with name='check' class='w-8 h-8' %}</div>
+    <h3 class="font-display text-lg mb-2">Aucune question pour l'instant</h3>
+    <p class="text-sm text-smoke mb-4">Ajoutez des questions pour activer ce quiz.</p>
+    <a href="{% url 'instructor:question_create' quiz.pk %}" class="btn-primary text-sm">
+        {% include 'partials/icons.html' with name='sparkles' class='w-3.5 h-3.5' %}
+        Ajouter la première question
+    </a>
+</div>
+{% endif %}
+
+<!-- Zone danger -->
+<div class="card mt-8" style="border-color: #FCA5A5; background: #FEF2F2;">
+    <div class="eyebrow mb-2" style="color: var(--crimson);">Zone de danger</div>
+    <p class="text-sm text-ink mb-3">La suppression d'un quiz entraîne la perte de toutes les questions et tentatives associées.</p>
+    <a href="{% url 'instructor:quiz_delete' quiz.pk %}" class="btn-ghost text-sm" style="color: var(--crimson); border-color: var(--crimson);">
+        {% include 'partials/icons.html' with name='x' class='w-3.5 h-3.5' %}
+        Supprimer ce quiz
+    </a>
+</div>
+{% endblock %}

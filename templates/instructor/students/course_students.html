@@ -1,0 +1,96 @@
+{% extends 'instructor/base_instructor.html' %}
+{% block title %}Étudiants · {{ course.title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">Étudiants</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">Audience</div>
+        <h1 class="instructor-page-title">Étudiants du <em class="text-display-italic" style="color: var(--amber);">cours</em></h1>
+        <p class="instructor-page-subtitle">{{ course.title }} · {{ paginator.count }} inscrit{{ paginator.count|pluralize }}</p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+            Retour au cours
+        </a>
+    </div>
+</div>
+
+{% if enrollments %}
+<div class="card !p-0 overflow-hidden">
+    <table class="instructor-table">
+        <thead>
+            <tr>
+                <th>Étudiant</th>
+                <th class="text-center">Progression</th>
+                <th class="text-center">Statut</th>
+                <th class="text-center">Inscrit le</th>
+                <th class="text-center">Terminé le</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enrollment in enrollments %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-3">
+                        <div class="comment-avatar !w-9 !h-9 !text-xs">
+                            {% if enrollment.student.avatar %}
+                            <img src="{{ enrollment.student.avatar.url }}" alt="" class="w-full h-full object-cover">
+                            {% else %}
+                            {{ enrollment.student.first_name|first|upper }}{{ enrollment.student.last_name|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="font-medium text-obsidian text-sm">{{ enrollment.student.get_full_name|default:enrollment.student.username }}</div>
+                            <div class="text-xs text-smoke">{{ enrollment.student.email }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="inline-flex items-center gap-2">
+                        <div class="w-24 h-1.5 bg-mist rounded-full overflow-hidden">
+                            <div class="h-full bg-amber" style="width: {{ enrollment.progress_percentage }}%;"></div>
+                        </div>
+                        <span class="text-xs font-mono text-smoke w-9 text-right">{{ enrollment.progress_percentage }}%</span>
+                    </div>
+                </td>
+                <td class="text-center">
+                    {% if enrollment.status == 'COMPLETED' %}
+                    <span class="badge" style="background: #DCFCE7; color: var(--forest); border-color: var(--forest);">Terminé</span>
+                    {% else %}
+                    <span class="badge" style="background: #DBEAFE; color: var(--ocean); border-color: var(--ocean);">Actif</span>
+                    {% endif %}
+                </td>
+                <td class="text-center text-xs text-smoke font-mono">{{ enrollment.enrolled_at|date:"d M y" }}</td>
+                <td class="text-center text-xs text-smoke font-mono">{{ enrollment.completed_at|date:"d M y"|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<div class="mt-6 flex items-center justify-between">
+    <p class="text-sm text-smoke">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</p>
+    <div class="flex gap-2">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn-ghost text-xs">← Précédent</a>{% endif %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn-ghost text-xs">Suivant →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">{% include 'partials/icons.html' with name='users' class='w-8 h-8' %}</div>
+    <h3 class="font-display text-lg mb-2">Aucun étudiant inscrit</h3>
+    <p class="text-sm text-smoke">Personne ne s'est encore inscrit à ce cours.</p>
+</div>
+{% endif %}
+{% endblock %}

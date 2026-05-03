@@ -1,0 +1,133 @@
+{% extends 'instructor/base_instructor.html' %}
+{% block title %}Stats · {{ course.title }}{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">Statistiques</span>
+{% endblock %}
+
+{% block content %}
+<div class="instructor-page-header">
+    <div>
+        <div class="eyebrow mb-2">Performance</div>
+        <h1 class="instructor-page-title">Statistiques <em class="text-display-italic" style="color: var(--amber);">détaillées</em></h1>
+        <p class="instructor-page-subtitle">{{ course.title }}</p>
+    </div>
+    <div class="instructor-page-actions">
+        <a href="{% url 'instructor:course_students' course.pk %}" class="btn-ghost">
+            {% include 'partials/icons.html' with name='users' class='w-4 h-4' %}
+            Voir les étudiants
+        </a>
+    </div>
+</div>
+
+<!-- KPIs -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Inscriptions</span>
+            <div class="stat-card-icon" style="background: #DBEAFE; color: var(--ocean);">{% include 'partials/icons.html' with name='users' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ total_enrollments }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Actifs</span>
+            <div class="stat-card-icon">{% include 'partials/icons.html' with name='zap' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ active_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Cours terminés</span>
+            <div class="stat-card-icon" style="background: #DCFCE7; color: var(--forest);">{% include 'partials/icons.html' with name='check' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ completed_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Taux complétion</span>
+            <div class="stat-card-icon" style="background: #FEF3C7; color: var(--amber);">{% include 'partials/icons.html' with name='star' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ completion_rate }}%</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Certificats</span>
+            <div class="stat-card-icon" style="background: #FEE2E2; color: var(--crimson);">{% include 'partials/icons.html' with name='award' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ total_certificates }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Commentaires</span>
+            <div class="stat-card-icon">{% include 'partials/icons.html' with name='mail' class='w-4 h-4' %}</div>
+        </div>
+        <div class="stat-card-value">{{ total_comments }}</div>
+        <div class="stat-card-trend neutral">{{ instructor_replies }} de votre part</div>
+    </div>
+</div>
+
+<!-- Évolution inscriptions -->
+<div class="card mb-6">
+    <div class="eyebrow mb-3">Évolution</div>
+    <h2 class="font-display text-xl mb-4">Inscriptions des 30 derniers jours</h2>
+
+    <div class="flex items-end gap-1 h-40">
+        {% for day in enrollments_by_day %}
+        <div class="flex-1 flex flex-col items-center justify-end group relative">
+            <div class="w-full bg-amber/20 hover:bg-amber transition-colors rounded-t" style="height: {% if day.count == 0 %}2{% else %}{% widthratio day.count 10 100 %}{% endif %}%; min-height: 2px;" title="{{ day.date }} : {{ day.count }}"></div>
+            {% if forloop.counter == 1 or forloop.counter == 15 or forloop.last %}
+            <div class="text-[10px] font-mono text-smoke mt-1">{{ day.date }}</div>
+            {% endif %}
+            <div class="absolute bottom-full mb-2 px-2 py-1 bg-obsidian text-ivory text-[10px] font-mono rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                {{ day.date }} : {{ day.count }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quiz Stats -->
+{% if quiz_stats %}
+<div class="card !p-0 overflow-hidden">
+    <div class="p-4 border-b border-mist">
+        <div class="eyebrow mb-1">Évaluations</div>
+        <h2 class="font-display text-xl">Performance des quiz</h2>
+    </div>
+    <table class="instructor-table">
+        <thead>
+            <tr>
+                <th>Quiz</th>
+                <th class="text-center">Tentatives</th>
+                <th class="text-center">Taux de réussite</th>
+                <th class="text-center">Score moyen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in quiz_stats %}
+            <tr>
+                <td>
+                    <a href="{% url 'instructor:quiz_manage' stat.quiz.pk %}" class="font-medium text-obsidian hover:text-amber-brand">
+                        {{ stat.quiz.title }}
+                    </a>
+                </td>
+                <td class="text-center font-mono">{{ stat.attempts }}</td>
+                <td class="text-center">
+                    <div class="inline-flex items-center gap-2">
+                        <div class="w-20 h-1.5 bg-mist rounded-full overflow-hidden">
+                            <div class="h-full" style="width: {{ stat.pass_rate }}%; background: {% if stat.pass_rate >= 70 %}var(--forest){% elif stat.pass_rate >= 40 %}var(--amber){% else %}var(--crimson){% endif %};"></div>
+                        </div>
+                        <span class="font-mono text-sm">{{ stat.pass_rate|floatformat:0 }}%</span>
+                    </div>
+                </td>
+                <td class="text-center font-mono">{{ stat.avg_score|floatformat:0 }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

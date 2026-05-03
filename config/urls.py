@@ -10,6 +10,7 @@ urlpatterns = [
     path('quiz/', include('apps.quizzes.urls', namespace='quizzes')),
     path('certificats/', include('apps.certificates.urls', namespace='certificates')),
     path('interactions/', include('apps.interactions.urls', namespace='interactions')),
+    path('formateur/', include('apps.instructor.urls', namespace='instructor')), 
     path('', include('apps.accounts.urls', namespace='accounts')),
 ]
 

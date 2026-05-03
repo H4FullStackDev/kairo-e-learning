@@ -1,0 +1,42 @@
+{% extends 'instructor/base_instructor.html' %}
+
+{% block title %}Supprimer la leçon{% endblock %}
+
+{% block breadcrumb %}
+<span>/</span>
+<a href="{% url 'instructor:course_manage' course.pk %}">{{ course.title|truncatechars:25 }}</a>
+<span>/</span>
+<span class="current">Supprimer leçon</span>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="card" style="border-color: #FCA5A5; background: #FEF2F2;">
+        <div class="text-center py-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4" style="background: var(--crimson); color: white;">
+                {% include 'partials/icons.html' with name='x' class='w-8 h-8' %}
+            </div>
+            <div class="eyebrow mb-2" style="color: var(--crimson);">Action irréversible</div>
+            <h1 class="font-display text-3xl mb-3">Supprimer cette leçon ?</h1>
+            <p class="text-ink/80 max-w-md mx-auto">
+                Vous êtes sur le point de supprimer définitivement la leçon <strong>« {{ lesson.title }} »</strong>.
+            </p>
+            <p class="text-sm text-smoke mt-4">
+                Du chapitre : {{ chapter.title }}
+            </p>
+        </div>
+
+        <form method="POST" class="flex items-center justify-between">
+            {% csrf_token %}
+            <a href="{% url 'instructor:course_manage' course.pk %}" class="btn-ghost">
+                {% include 'partials/icons.html' with name='arrow-left' class='w-4 h-4' %}
+                Annuler
+            </a>
+            <button type="submit" class="btn-primary" style="background: var(--crimson); color: white;">
+                {% include 'partials/icons.html' with name='x' class='w-4 h-4' %}
+                Supprimer définitivement
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Espace Formateur{% endblock %} · Kairos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    {% load static tailwind_tags %}
+    {% tailwind_css %}
+</head>
+<body>
+    <div class="instructor-layout">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="instructor-sidebar">
+            <!-- Logo -->
+            <div class="instructor-sidebar-header">
+                <a href="{% url 'instructor:dashboard' %}" class="instructor-logo">
+                    <div class="instructor-logo-icon">K</div>
+                    <div>
+                        <div class="instructor-logo-text">Kairos</div>
+                        <span class="instructor-logo-tag">Espace Formateur</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="instructor-nav">
+                <div class="instructor-nav-section">
+                    <div class="instructor-nav-label">Pilotage</div>
+
+                    <a href="{% url 'instructor:dashboard' %}"
+                       class="instructor-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        {% include 'partials/icons.html' with name='chart' class='instructor-nav-icon' %}
+                        Tableau de bord
+                    </a>
+                </div>
+
+                <div class="instructor-nav-section">
+                    <div class="instructor-nav-label">Contenu</div>
+
+                    <a href="{% url 'instructor:course_list' %}"
+   class="instructor-nav-item {% if 'cours' in request.path or request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_create' or request.resolver_match.url_name == 'course_edit' or request.resolver_match.url_name == 'course_manage' %}active{% endif %}">
+    {% include 'partials/icons.html' with name='book' class='instructor-nav-icon' %}
+    Mes cours
+</a>
+
+                    <a href="#" class="instructor-nav-item">
+                        {% include 'partials/icons.html' with name='video' class='instructor-nav-icon' %}
+                        Leçons
+                    </a>
+
+                    <a href="{% url 'instructor:course_list' %}" class="instructor-nav-item" title="Sélectionnez un cours pour voir ses quiz">
+    {% include 'partials/icons.html' with name='check' class='instructor-nav-icon' %}
+    Quiz
+</a>
+                </div>
+
+                <div class="instructor-nav-section">
+                    <div class="instructor-nav-label">Audience</div>
+
+                    <a href="{% url 'instructor:students' %}"
+   class="instructor-nav-item {% if request.resolver_match.url_name == 'students' %}active{% endif %}">
+    {% include 'partials/icons.html' with name='users' class='instructor-nav-icon' %}
+    Étudiants
+</a>
+
+                    <a href="#" class="instructor-nav-item">
+                        {% include 'partials/icons.html' with name='mail' class='instructor-nav-icon' %}
+                        Commentaires
+                    </a>
+                </div>
+
+                <div class="instructor-nav-section">
+                    <div class="instructor-nav-label">Compte</div>
+
+                    <a href="{% url 'accounts:profile' %}" class="instructor-nav-item">
+                        {% include 'partials/icons.html' with name='user' class='instructor-nav-icon' %}
+                        Mon profil
+                    </a>
+
+                    <a href="{% url 'courses:course_list' %}" class="instructor-nav-item">
+                        {% include 'partials/icons.html' with name='arrow-left' class='instructor-nav-icon' %}
+                        Retour au site
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Footer sidebar -->
+            <div class="instructor-sidebar-footer">
+                <div class="instructor-user-card">
+                    <div class="instructor-user-avatar">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="{{ user.get_full_name }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="instructor-user-info">
+                        <div class="instructor-user-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="instructor-user-role">Formateur</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div class="instructor-main">
+            <!-- Topbar -->
+            <header class="instructor-topbar">
+                <div class="instructor-breadcrumb">
+                    <a href="{% url 'instructor:dashboard' %}">Espace formateur</a>
+                    {% block breadcrumb %}{% endblock %}
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'courses:course_list' %}" class="text-xs text-smoke hover:text-obsidian transition-colors flex items-center gap-1.5">
+                        {% include 'partials/icons.html' with name='arrow-right' class='w-3.5 h-3.5' %}
+                        Voir le site
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="instructor-content">
+                {% if messages %}
+                <div class="space-y-2 mb-6">
+                    {% for message in messages %}
+                    <div class="card bg-paper border-amber/20 text-sm">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>
